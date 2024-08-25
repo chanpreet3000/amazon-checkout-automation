@@ -97,6 +97,14 @@ const UrlCards = ({urls}) => {
       for (const urlObj of urls) {
         const response = await axiosApi.post('/process_url', {url: urlObj.url});
         const processedData = response.data;
+        if (processedData.status === 'ERROR') {
+          setData((prevData) => {
+            const newData = [...prevData];
+            newData.push({...processedData});
+            return newData;
+          })
+          continue;
+        }
 
         const maxQuantity = processedData.quantity_options && processedData.quantity_options.length > 0
           ? Math.max(...processedData.quantity_options.map(option => parseInt(option.value)))
