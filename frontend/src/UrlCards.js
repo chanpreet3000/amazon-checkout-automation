@@ -4,28 +4,7 @@ import {ImSpinner8} from "react-icons/im";
 import {axiosApi} from "./axios";
 import {Link} from "react-router-dom";
 
-
-const PendingUrlCard = ({index, item, handleUpdate}) => {
-  useEffect(() => {
-    const fetchData = async () => {
-      await axiosApi.post('/process_url', {url: item.url})
-        .then((response) => {
-          const data = response.data;
-          handleUpdate(index, data);
-        });
-    }
-
-    fetchData();
-  }, []);
-
-  return (
-    <div className="bg-[#212121ff] min-h-12 rounded-xl flex justify-center items-center">
-      <ImSpinner8 className="text-soft-white animate-spin"/>
-    </div>
-  )
-}
-
-const ProcessedUrlCard = ({index, item, handleUpdate}) => {
+const ProcessedUrlCard = ({index, item}) => {
   const [qtyValue, setQtyValue] = useState(item.quantity_options[0]?.value);
   const [frequencyValue, setFrequencyValue] = useState(item.frequency_options[0]?.value);
 
@@ -95,38 +74,37 @@ const ErrorUrlCard = ({item}) => {
   )
 }
 
-const UrlCard = ({index, item, handleUpdate}) => {
-  const key = `${item.status}-${index}`;
-  if (item.status === 'PENDING') {
-    return <PendingUrlCard key={key} handleUpdate={handleUpdate} item={item} index={index}/>
-  } else if (item.status === 'PROCESSED') {
-    return <ProcessedUrlCard key={key} handleUpdate={handleUpdate} item={item} index={index}/>
+const UrlCard = ({item}) => {
+  if (item.status === 'PROCESSED') {
+    return <ProcessedUrlCard item={item}/>;
   } else if (item.status === 'ERROR') {
-    return <ErrorUrlCard key={key} handleUpdate={handleUpdate} item={item} index={index}/>
+    return <ErrorUrlCard item={item}/>;
   }
   return (
-    <div key={index}
-         className="bg-[#212121ff] min-h-12 rounded-xl flex justify-center items-center">
+    <div className="bg-[#212121ff] min-h-12 rounded-xl flex justify-center items-center">
       Unknown State
     </div>
-  )
-}
+  );
+};
+
 const UrlCards = ({urls}) => {
-  const initialData = urls.map((url) => {
-    return {
-      url: url, status: 'PENDING',
-    }
-  })
+  const [data, setData] = useState([]);
+  const [isFetching, setIsFetching] = useState(true);
 
-  const [data, setData] = useState(initialData);
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsFetching(true);
+      for (const url of urls) {
+        await axiosApi.post('/process_url', {url})
+          .then(response => {
+            setData((prevData) => [...prevData, response.data]);
+          })
+      }
+      setIsFetching(false);
+    };
 
-  const updateDataAtIndex = (index, newData) => {
-    setData((data) => {
-      const updatedData = [...data];
-      updatedData[index] = newData;
-      return updatedData;
-    })
-  }
+    fetchData();
+  }, [urls]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -134,11 +112,17 @@ const UrlCards = ({urls}) => {
         * Loading might take a few seconds. Please wait for the data to load.
       </div>
       <div className="flex flex-col gap-4">
-        {data.map((item, index) => <UrlCard index={index} item={item} handleUpdate={updateDataAtIndex}/>)}
-        <h1>{JSON.stringify(data)}</h1>
+        {data.map((item, index) => (
+          <UrlCard key={index} item={item}/>
+        ))}
+        {isFetching && (
+          <div className="bg-[#212121ff] min-h-12 rounded-xl flex justify-center items-center">
+            <ImSpinner8 className="text-soft-white animate-spin"/>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
 
 export default UrlCards;

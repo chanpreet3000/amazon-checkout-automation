@@ -2,7 +2,9 @@ import {useState} from "react";
 import UrlCards from "./UrlCards";
 
 const Home = () => {
-  const [textAreaValue, setTextAreaValue] = useState("https://www.amazon.co.uk/Everyday-Recycled-Resistant-Household-Caterers/dp/B0CB95SJCV");
+  const [textAreaValue, setTextAreaValue] = useState(`https://www.amazon.co.uk/dp/B0BMGR14DT?m=A3P5ROKL5A1OLE&ref=psp_pc_a_A3M5K1RZ4FGYO6&th=1
+https://www.amazon.co.uk/dp/B09NQG6J5V?m=A3P5ROKL5A1OLE&ref=psp_pc_a_A3M5K1RZ4FGYO6&th=1
+https://www.amazon.co.uk/dp/B0BM9NGP48?m=A3P5ROKL5A1OLE&ref=psp_pc_a_A3M5K1RZ4FGYO6&th=1`);
   const [urls, setUrls] = useState([]);
   const [isInputEntered, setIsInputEntered] = useState(false);
 
