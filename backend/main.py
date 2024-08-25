@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from browser import get_non_headless_browser, get_headless_browser
 from models import ScrapedData, URLInput
 from scrapper import scrape_product
 
@@ -32,10 +33,19 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(ErrorHandlerMiddleware)
 
+head_driver = get_non_headless_browser()
+headless_driver = get_headless_browser()
+
 
 @app.post("/process_url", response_model=ScrapedData)
 async def process_url(url_input: URLInput):
-    return scrape_product(url_input.url)
+    return scrape_product(head_driver, url_input.url)
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    head_driver.quit()
+    headless_driver.quit()
 
 
 if __name__ == "__main__":

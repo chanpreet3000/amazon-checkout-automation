@@ -1,10 +1,7 @@
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-import os
 
 from models import ScrapedData
 
@@ -17,15 +14,7 @@ def get_select_options(driver, select_id):
     return [{'value': option.get_attribute('value'), 'text': option.text.strip()} for option in select.options]
 
 
-def scrape_product(url_or_asin: str) -> ScrapedData:
-    user_data_dir = os.path.join(os.getcwd(), 'chrome_user_data')
-    chrome_options = Options()
-    chrome_options.add_argument(f"user-data-dir={user_data_dir}")
-    chrome_options.add_argument("--no-sandbox")
-    # chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=chrome_options)
-
+def scrape_product(driver, url_or_asin: str) -> ScrapedData:
     try:
         if not url_or_asin.startswith('https'):
             url = f"https://www.amazon.co.uk/dp/{url_or_asin}"
