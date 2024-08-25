@@ -5,7 +5,7 @@ import {axiosApi} from "./axios";
 import {Link} from "react-router-dom";
 
 const ProcessedUrlCard = ({index, item}) => {
-  const [qtyValue, setQtyValue] = useState(item.quantity_options[0]?.value);
+  const [qtyValue, setQtyValue] = useState(item.defaultQuantity.toString());
   const [frequencyValue, setFrequencyValue] = useState(item.frequency_options[0]?.value);
 
   return (
@@ -94,11 +94,32 @@ const UrlCards = ({urls}) => {
   useEffect(() => {
     const fetchData = async () => {
       setIsFetching(true);
-      for (const url of urls) {
-        await axiosApi.post('/process_url', {url})
-          .then(response => {
-            setData((prevData) => [...prevData, response.data]);
-          })
+      for (const urlObj of urls) {
+        const response = await axiosApi.post('/process_url', {url: urlObj.url});
+        const processedData = response.data;
+
+        const maxQuantity = processedData.quantity_options && processedData.quantity_options.length > 0
+          ? Math.max(...processedData.quantity_options.map(option => parseInt(option.value)))
+          : 1;
+
+        // Calculate how many objects we need to create
+        const fullObjects = Math.floor(urlObj.quantity / maxQuantity);
+        const remainder = urlObj.quantity % maxQuantity;
+
+        setData((prevData) => {
+          const newData = [...prevData];
+          // Create full quantity objects
+          for (let i = 0; i < fullObjects; i++) {
+            newData.push({...processedData, defaultQuantity: maxQuantity});
+          }
+
+          // Create remainder object if needed
+          if (remainder > 0) {
+            newData.push({...processedData, defaultQuantity: remainder});
+          }
+          return newData;
+        })
+
       }
       setIsFetching(false);
     };
