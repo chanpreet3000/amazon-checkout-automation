@@ -50,7 +50,8 @@ const ProcessedUrlCard = ({index, item}) => {
           </div>
         </div>
       </div>
-      <button className="bg-soft-white text-deep-black text-base font-semibold py-2 px-8 rounded-xl">Checkout</button>
+      <button className="bg-vibrant-orange text-soft-white text-base font-semibold py-2 px-8 rounded-xl">Checkout
+      </button>
     </div>
   )
 }
