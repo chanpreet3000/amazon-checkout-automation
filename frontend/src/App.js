@@ -1,5 +1,5 @@
 import {Link, Route, Routes} from "react-router-dom";
-import React from "react";
+import React, {useEffect} from "react";
 import Home from "./Home";
 import {axiosApi} from "./axios";
 
@@ -8,6 +8,10 @@ const Navbar = () => {
     await axiosApi.get('/open_amazon_signin');
     alert('Please sign in to Amazon in the google chrome that opened.');
   }
+
+  useEffect(() => {
+    document.title = 'Amazon Checkout Automation'
+  })
 
   return (
     <div className="w-full flex flex-row justify-between items-center">

@@ -46,6 +46,9 @@ https://www.amazon.co.uk/dp/B0BM9NGP48?m=A3P5ROKL5A1OLE&ref=psp_pc_a_A3M5K1RZ4FG
 
   return (
     <div className="text-soft-white mt-16">
+      <div className="text-sm text-red-500 italic">
+        * Reloading the page will start everything over.
+      </div>
       {!isInputEntered ? (
         <div className="flex flex-col gap-4">
           <div className="text-sm text-red-500 italic">
