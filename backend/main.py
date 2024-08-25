@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from models import ScrapedData, URLInput
-from scrapper import AmazonScraper
+from scrapper import scrape_product
 
 app = FastAPI()
 
@@ -35,8 +35,7 @@ app.add_middleware(ErrorHandlerMiddleware)
 
 @app.post("/process_url", response_model=ScrapedData)
 async def process_url(url_input: URLInput):
-    scraper = AmazonScraper()
-    return scraper.scrape_product(url_input.url)
+    return scrape_product(url_input.url)
 
 
 if __name__ == "__main__":

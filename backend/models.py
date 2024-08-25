@@ -13,3 +13,4 @@ class ScrapedData(BaseModel):
     quantity_options: List[dict]
     frequency_options: List[dict]
     status: str
+    error: Optional[str] = None

@@ -9,85 +9,76 @@ import os
 from models import ScrapedData
 
 
-class AmazonScraper:
-    def __init__(self):
-        self.driver = None
-        self.user_data_dir = os.path.join(os.getcwd(), 'chrome_user_data')
+def get_select_options(driver, select_id):
+    select_element = WebDriverWait(driver, 5).until(
+        EC.presence_of_element_located((By.ID, select_id))
+    )
+    select = Select(select_element)
+    return [{'value': option.get_attribute('value'), 'text': option.text.strip()} for option in select.options]
 
-    def setup_driver(self):
-        chrome_options = Options()
-        chrome_options.add_argument(f"user-data-dir={self.user_data_dir}")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        self.driver = webdriver.Chrome(options=chrome_options)
 
-    def get_select_options(self, select_id):
-        try:
-            select_element = WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.ID, select_id))
-            )
-            select = Select(select_element)
-            return [{'value': option.get_attribute('value'), 'text': option.text} for option in select.options]
-        except (NoSuchElementException, TimeoutException):
-            print(f"Select element with id '{select_id}' not found")
-            return []
+def scrape_product(url_or_asin: str) -> ScrapedData:
+    user_data_dir = os.path.join(os.getcwd(), 'chrome_user_data')
+    chrome_options = Options()
+    chrome_options.add_argument(f"user-data-dir={user_data_dir}")
+    chrome_options.add_argument("--no-sandbox")
+    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    driver = webdriver.Chrome(options=chrome_options)
 
-    def scrape_product(self, url_or_asin) -> ScrapedData:
-        if not self.driver:
-            self.setup_driver()
-
-        # If ASIN is provided, construct the Amazon URL
-        if len(url_or_asin) == 10 and url_or_asin.isalnum():
+    try:
+        if not url_or_asin.startswith('https'):
             url = f"https://www.amazon.co.uk/dp/{url_or_asin}"
         else:
             url = url_or_asin
 
-        self.driver.get(url)
+        driver.get(url)
+
+        wait = WebDriverWait(driver, 10)
+        product_title = wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
+        title = product_title.text
 
         try:
-            wait = WebDriverWait(self.driver, 10)
-            product_title = wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
-            title = product_title.text
-            try:
-                img_element = self.driver.find_element(By.ID, "landingImage")
-                img_url = img_element.get_attribute("src")
-            except NoSuchElementException:
-                img_url = None
-                print(f"Main product image not found for {title}")
+            img_element = driver.find_element(By.ID, "landingImage")
+            img_url = img_element.get_attribute("src")
+        except NoSuchElementException:
+            img_url = None
 
-            try:
-                sns_element = WebDriverWait(self.driver, 5).until(
-                    EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle"))
-                )
-                sns_element.click()
-                print(f"Clicked on Subscribe & Save option for {title}")
-
-                # Get options for quantity and frequency
-                quantity_options = self.get_select_options("rcxsubsQuan")
-                frequency_options = self.get_select_options("rcxOrdFreqSns")
-
-            except (NoSuchElementException, TimeoutException):
-                print(f"Subscribe & Save option not found or not clickable for {title}")
-                quantity_options = []
-                frequency_options = []
-
+        try:
+            sns_element = WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle"))
+            )
+            sns_element.click()
+            quantity_options = get_select_options(driver, "rcxsubsQuan")
+            frequency_options = get_select_options(driver, "rcxOrdFreqSns")
+        except (NoSuchElementException, TimeoutException):
             return ScrapedData(
                 url=url,
                 title=title,
                 img_url=img_url,
-                quantity_options=quantity_options,
-                frequency_options=frequency_options,
-                status="PROCESSED"
-            )
-
-        except Exception as e:
-            print(f"Error scraping product: {str(e)}")
-            return ScrapedData(
-                url=url,
-                title=None,
-                img_url=None,
                 quantity_options=[],
                 frequency_options=[],
-                status="PROCESSED"
+                status="ERROR",
+                error=f"Most likely this product is not available for Subscribe & Save."
             )
+
+        return ScrapedData(
+            url=url,
+            title=title,
+            img_url=img_url,
+            quantity_options=quantity_options,
+            frequency_options=frequency_options,
+            status="PROCESSED"
+        )
+
+    except Exception as e:
+        print(f"Error scraping product: {e}")
+        return ScrapedData(
+            url=url_or_asin,
+            title=None,
+            img_url=None,
+            quantity_options=[],
+            frequency_options=[],
+            status="ERROR",
+            error=f"An error occurred while scraping the product:-{e}"
+        )

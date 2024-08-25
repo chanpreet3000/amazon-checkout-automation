@@ -19,8 +19,7 @@ const PendingUrlCard = ({index, item, handleUpdate}) => {
   }, []);
 
   return (
-    <div key={index}
-         className="bg-[#212121ff] min-h-12 rounded-xl flex justify-center items-center">
+    <div className="bg-[#212121ff] min-h-12 rounded-xl flex justify-center items-center">
       <ImSpinner8 className="text-soft-white animate-spin"/>
     </div>
   )
@@ -31,10 +30,11 @@ const ProcessedUrlCard = ({index, item, handleUpdate}) => {
   const [frequencyValue, setFrequencyValue] = useState(item.frequency_options[0]?.value);
 
   return (
-    <div key={index}
-         className="bg-[#212121ff] min-h-12 rounded-xl text-base flex justify-between gap-12 items-center p-4 px-8">
+    <div className="bg-[#212121ff] min-h-12 rounded-xl text-base flex justify-between gap-12 items-center p-4 px-8">
       <div className="flex gap-4 items-center">
-        <img src={item.img_url} className="w-[75px] h-[75px] rounded-full object-cover" alt={item.title}/>
+        <div className="grow-0 shrink-0 w-[75px] h-[75px] overflow-hidden rounded-full">
+          <img src={item.img_url} className="w-full h-full object-cover" alt={item.title}/>
+        </div>
         <div className="flex flex-col gap-2">
           <Link className="text-blue-300 line-clamp-2" target="_blank" to={item.url}>{item.title}</Link>
           <div className="flex flex-wrap gap-4 items-center">
@@ -76,12 +76,33 @@ const ProcessedUrlCard = ({index, item, handleUpdate}) => {
   )
 }
 
+const ErrorUrlCard = ({item}) => {
+  return (
+    <div
+      className="bg-crimson-red text-soft-white min-h-12 rounded-xl text-base flex justify-between gap-12 items-center p-4 px-8">
+      <div className="flex gap-4 items-center">
+        <div className="grow-0 shrink-0 w-[75px] h-[75px] overflow-hidden rounded-full">
+          <img src={item.img_url} className="w-full h-full object-cover" alt={item.title}/>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Link className="text-blue-300 line-clamp-2" target="_blank" to={item.url}>{item.title}</Link>
+          <div>
+            {`An Error Occurred:- ${item.error}`}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const UrlCard = ({index, item, handleUpdate}) => {
   const key = `${item.status}-${index}`;
   if (item.status === 'PENDING') {
     return <PendingUrlCard key={key} handleUpdate={handleUpdate} item={item} index={index}/>
   } else if (item.status === 'PROCESSED') {
     return <ProcessedUrlCard key={key} handleUpdate={handleUpdate} item={item} index={index}/>
+  } else if (item.status === 'ERROR') {
+    return <ErrorUrlCard key={key} handleUpdate={handleUpdate} item={item} index={index}/>
   }
   return (
     <div key={index}
