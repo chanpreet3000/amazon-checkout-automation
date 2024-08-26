@@ -1,6 +1,7 @@
-import React, {useEffect, useState} from "react";
+import React, {useContext, useState} from "react";
 import {Link} from "react-router-dom";
 import {axiosApi} from "../../axios";
+import {AutomationContext} from "./automation_context/AutomationContext";
 
 export const ErrorItem = ({item}) => {
   return (
@@ -27,7 +28,7 @@ const GroupItem = ({index1, index2, item, updateQuantity}) => {
 
   const onQuantityChange = (e) => {
     setQtyValue(e.target.value)
-    updateQuantity(index1, index2, qtyValue)
+    updateQuantity(index1, index2, e.target.value)
   }
 
   return (
@@ -89,27 +90,32 @@ const ShoppingCartItem = ({index1, item, updateQuantity}) => {
     </div>
   )
 }
-const GroupCards = ({results, errorResults, updateQuantity}) => {
+const GroupCards = ({updateQuantity}) => {
+  const {processedData} = useContext(AutomationContext);
+
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        {
-          errorResults.map((item, index) => {
-            return (<ErrorItem item={item} key={index}/>)
-          })
-        }
-      </div>
+      {processedData.error_results.length > 0 &&
+        <div className="flex flex-col gap-2">
+          {
+            processedData.error_results.map((item, index) => {
+              return (<ErrorItem item={item} key={index}/>)
+            })
+          }
+        </div>
+      }
       <div className="flex flex-col gap-4">
         {
-          results.map((group, index1) => <ShoppingCartItem key={index1} item={group} updateQuantity={updateQuantity}
-                                                           index1={index1}/>)
+          processedData.results.map((group, index1) => <ShoppingCartItem key={index1} item={group}
+                                                                         updateQuantity={updateQuantity}
+                                                                         index1={index1}/>)
         }
       </div>
       <pre className="bg-[#212121ff] p-4 rounded-xl text-soft-white overflow-auto">
-          {JSON.stringify(results, null, 2)}
+          {JSON.stringify(processedData.results, null, 2)}
       </pre>
       <pre className="bg-[#212121ff] p-4 rounded-xl text-soft-white overflow-auto">
-          {JSON.stringify(errorResults, null, 2)}
+          {JSON.stringify(processedData.errorResults, null, 2)}
       </pre>
     </div>
 
