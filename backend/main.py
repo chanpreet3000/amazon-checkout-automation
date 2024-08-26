@@ -8,6 +8,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from selenium.webdriver.support import expected_conditions as EC
 from fastapi import FastAPI, WebSocket, BackgroundTasks
+
+from Logger import Logger
 from browser import NonHeadlessBrowser
 
 from models import CheckoutInput, BatchProductInput, ProgressUpdate, ScrapedData
@@ -33,6 +35,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         try:
             return await call_next(request)
         except Exception as e:
+            Logger.critical("An internal server error occurred", e)
             return JSONResponse(
                 status_code=500,
                 content={"message": f"An internal server error occurred: {str(e)}"}
@@ -80,6 +83,7 @@ async def batch_process_products(websocket: WebSocket):
         results = []
         error_results = []
         total = len(batch_input.products)
+        Logger.info('Batch processing started', batch_input.products)
 
         for i, product in enumerate(batch_input.products, 1):
             scraped_data = scrape_product(product.url_or_asin)
@@ -93,8 +97,12 @@ async def batch_process_products(websocket: WebSocket):
             # Add a small delay to avoid overwhelming the server
             await asyncio.sleep(0.1)
 
+        Logger.info('Batch processing Ended', results)
         merged_result = merge_groups(results)
-        await websocket.send_json({"results": merged_result, "error_results": error_results})
+        Logger.info('Merged Batches', merged_result)
+        response = {"results": merged_result, "error_results": error_results}
+        Logger.info('Batch processing Response', response)
+        await websocket.send_json(response)
 
     except Exception as e:
         await websocket.send_json({"error": str(e)})
@@ -105,6 +113,7 @@ async def batch_process_products(websocket: WebSocket):
 
 @app.get("/open_amazon_signin")
 async def open_amazon_signin():
+    Logger.info('Opening Amazon sign-in page')
     signin_url = "https://www.amazon.co.uk/ap/signin?openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.co.uk%2Fref%3Dnav_signin&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.assoc_handle=gbflex&openid.mode=checkid_setup&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
     driver = NonHeadlessBrowser.get_driver()
     driver.get(signin_url)
@@ -113,6 +122,8 @@ async def open_amazon_signin():
 
 @app.post("/checkout")
 async def checkout(checkout_input: CheckoutInput, background_tasks: BackgroundTasks):
+    Logger.info('Checkout initiated', checkout_input)
+
     driver = NonHeadlessBrowser.get_driver()
     try:
         for item in checkout_input.data:
@@ -120,12 +131,15 @@ async def checkout(checkout_input: CheckoutInput, background_tasks: BackgroundTa
 
         wait = WebDriverWait(driver, 5)
 
+        Logger.info('Initiating checkout process')
         # Go to the cart page
         driver.get("https://www.amazon.co.uk/gp/cart/view.html")
 
         # Wait for the "Proceed to checkout" button and click it
         checkout_button = wait.until(EC.element_to_be_clickable((By.NAME, "proceedToRetailCheckout")))
         checkout_button.click()
+
+        Logger.info('Checkout Button Clicked')
 
         # Wait for the checkout page to load
         wait.until(EC.presence_of_element_located((By.ID, "checkoutDisplayPage")))
@@ -138,6 +152,7 @@ async def checkout(checkout_input: CheckoutInput, background_tasks: BackgroundTa
         }
     except Exception as e:
         driver.quit()
+        Logger.error('An error occurred during the checkout process', e)
         return {
             "message": "An error occurred during the checkout process",
             "error": str(e),

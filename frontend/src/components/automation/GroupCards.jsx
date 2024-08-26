@@ -111,12 +111,6 @@ const GroupCards = ({updateQuantity}) => {
                                                                          index1={index1}/>)
         }
       </div>
-      <pre className="bg-[#212121ff] p-4 rounded-xl text-soft-white overflow-auto">
-          {JSON.stringify(processedData.results, null, 2)}
-      </pre>
-      <pre className="bg-[#212121ff] p-4 rounded-xl text-soft-white overflow-auto">
-          {JSON.stringify(processedData.errorResults, null, 2)}
-      </pre>
     </div>
 
   )
