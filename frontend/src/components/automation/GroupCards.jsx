@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
+import {axiosApi} from "../../axios";
 
 export const ErrorItem = ({item}) => {
   return (
@@ -24,9 +25,10 @@ export const ErrorItem = ({item}) => {
 const GroupItem = ({index1, index2, item, updateQuantity}) => {
   const [qtyValue, setQtyValue] = useState(item.quantity.toString());
 
-  useEffect(() => {
+  const onQuantityChange = (e) => {
+    setQtyValue(e.target.value)
     updateQuantity(index1, index2, qtyValue)
-  }, [updateQuantity, qtyValue, index1, index2])
+  }
 
   return (
     <div className="min-h-12 text-base flex gap-4 items-center">
@@ -42,7 +44,7 @@ const GroupItem = ({index1, index2, item, updateQuantity}) => {
               id={`quantity-${index2}`}
               className="bg-[#323232ff] rounded text-soft-white px-2 py-1"
               defaultValue={qtyValue}
-              onChange={(e) => setQtyValue(e.target.value)}
+              onChange={onQuantityChange}
             >
               {item.quantity_options.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -59,13 +61,9 @@ const GroupItem = ({index1, index2, item, updateQuantity}) => {
 
 const ShoppingCartItem = ({index1, item, updateQuantity}) => {
   const checkoutHandler = async () => {
-    // await axiosApi.post('/checkout', {
-    //   url: item.url,
-    //   quantity: qtyValue,
-    //   frequency: frequencyValue,
-    // }).then((response) => {
-    //   console.log(response.data);
-    // })
+    await axiosApi.post('/checkout', {data: item}).then((response) => {
+      console.log(response.data);
+    })
   }
 
   return (
@@ -93,7 +91,7 @@ const ShoppingCartItem = ({index1, item, updateQuantity}) => {
 }
 const GroupCards = ({results, errorResults, updateQuantity}) => {
   return (
-    <div className="flex flex-col gap-8 mt-2">
+    <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         {
           errorResults.map((item, index) => {

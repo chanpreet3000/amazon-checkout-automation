@@ -1,11 +1,13 @@
 from typing import List
 
-from fastapi import FastAPI, WebSocket
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-
+from selenium.webdriver.support import expected_conditions as EC
+from fastapi import FastAPI, WebSocket, BackgroundTasks
 from browser import NonHeadlessBrowser
 
 from models import CheckoutInput, BatchProductInput, ProgressUpdate, ScrapedData
@@ -110,14 +112,36 @@ async def open_amazon_signin():
 
 
 @app.post("/checkout")
-async def checkout(checkout_input: CheckoutInput):
-    checkout_automation(checkout_input)
-    return {
-        "message": "Checkout process initiated",
-        "url": checkout_input.url,
-        "quantity": checkout_input.quantity,
-        "frequency": checkout_input.frequency
-    }
+async def checkout(checkout_input: CheckoutInput, background_tasks: BackgroundTasks):
+    driver = NonHeadlessBrowser.get_driver()
+    try:
+        for item in checkout_input.data:
+            checkout_automation(driver, item)
+
+        wait = WebDriverWait(driver, 5)
+
+        # Go to the cart page
+        driver.get("https://www.amazon.co.uk/gp/cart/view.html")
+
+        # Wait for the "Proceed to checkout" button and click it
+        checkout_button = wait.until(EC.element_to_be_clickable((By.NAME, "proceedToRetailCheckout")))
+        checkout_button.click()
+
+        # Wait for the checkout page to load
+        wait.until(EC.presence_of_element_located((By.ID, "checkoutDisplayPage")))
+
+        # Add the task to wait for browser close to background tasks
+        background_tasks.add_task(NonHeadlessBrowser.wait_for_browser_close)
+
+        return {
+            "message": "Checkout process initiated. The response will be sent when you close the browser.",
+        }
+    except Exception as e:
+        driver.quit()
+        return {
+            "message": "An error occurred during the checkout process",
+            "error": str(e),
+        }
 
 
 if __name__ == "__main__":

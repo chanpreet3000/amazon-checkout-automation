@@ -22,9 +22,7 @@ class ScrapedData(BaseModel):
 
 
 class CheckoutInput(BaseModel):
-    url: str
-    quantity: str
-    frequency: str
+    data: List[ScrapedData]
 
 
 class BatchScrapedData(BaseModel):

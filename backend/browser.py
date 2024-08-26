@@ -20,6 +20,7 @@ class HeadlessBrowser:
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--enable-cookies")
         return webdriver.Chrome(options=chrome_options)
 
     @classmethod
@@ -48,6 +49,7 @@ class NonHeadlessBrowser:
         chrome_options.add_argument(f"user-data-dir={user_data_dir}")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--enable-cookies")
         return webdriver.Chrome(options=chrome_options)
 
     @classmethod
@@ -58,3 +60,8 @@ class NonHeadlessBrowser:
             return True
         except:
             return False
+
+    @classmethod
+    def wait_for_browser_close(cls):
+        if cls._instance:
+            cls._instance.wait_for_new_window()

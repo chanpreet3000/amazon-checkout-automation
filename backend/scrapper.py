@@ -76,13 +76,10 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
         )
 
 
-def checkout_automation(details: CheckoutInput):
-    driver = NonHeadlessBrowser.get_driver()
-
+def checkout_automation(driver, item: ScrapedData):
     try:
-        url = details.url
-        quantity = details.quantity
-        frequency = details.frequency
+        url = item.url
+        quantity = str(item.quantity)
 
         driver.get(url)
 
@@ -98,10 +95,6 @@ def checkout_automation(details: CheckoutInput):
         quantity_select = Select(wait.until(EC.presence_of_element_located((By.ID, "rcxsubsQuan"))))
         quantity_select.select_by_value(quantity)
 
-        # Select frequency
-        frequency_select = Select(wait.until(EC.presence_of_element_located((By.ID, "rcxOrdFreqSns"))))
-        frequency_select.select_by_value(frequency)
-
         # Click the "Subscribe Now" button
         subscribe_button = wait.until(
             EC.element_to_be_clickable((By.ID, "rcx-subscribe-submit-button-announce"))
@@ -111,14 +104,5 @@ def checkout_automation(details: CheckoutInput):
         # Wait for the cart page to load
         wait.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
 
-        return {
-            "status": "SUCCESS",
-            "message": "Product added to cart with Subscribe & Save options"
-        }
-
     except Exception as e:
-        print(f"Error during checkout: {e}")
-        return {
-            "status": "ERROR",
-            "error": f"An error occurred during checkout: {str(e)}"
-        }
+        print(f"Error during checkout for {item.url}: {e}")
