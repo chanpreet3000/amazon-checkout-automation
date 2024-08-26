@@ -25,7 +25,7 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
 
         driver.get(url)
 
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 4)
 
         # Wait only for the specific elements you need
         product_title = wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
@@ -43,14 +43,13 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
             )
             sns_element.click()
             quantity_options = get_select_options(driver, "rcxsubsQuan")
-            frequency_options = get_select_options(driver, "rcxOrdFreqSns")
         except (NoSuchElementException, TimeoutException):
             return ScrapedData(
                 url=url,
                 title=title,
                 img_url=img_url,
                 quantity_options=[],
-                frequency_options=[],
+                quantity=0,
                 status="ERROR",
                 error="Most likely this product is not available for Subscribe & Save."
             )
@@ -60,7 +59,7 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
             title=title,
             img_url=img_url,
             quantity_options=quantity_options,
-            frequency_options=frequency_options,
+            quantity=0,
             status="PROCESSED"
         )
 
@@ -71,7 +70,7 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
             title=None,
             img_url=None,
             quantity_options=[],
-            frequency_options=[],
+            quantity=0,
             status="ERROR",
             error=f"An error occurred while scraping the product: {e}"
         )

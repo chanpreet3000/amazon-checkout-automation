@@ -1,18 +1,24 @@
-from fastapi import FastAPI, Request
+from typing import List
+
+from fastapi import FastAPI, WebSocket
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
 from browser import NonHeadlessBrowser
 
-from models import ScrapedData, CheckoutInput, URLInput
+from models import CheckoutInput, BatchProductInput, ProgressUpdate, ScrapedData
 from scrapper import scrape_product, checkout_automation
+
+import asyncio
 
 app = FastAPI()
 
 # CORS middleware setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Adjust this to your frontend URL
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,9 +40,65 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
 app.add_middleware(ErrorHandlerMiddleware)
 
 
-@app.post("/process_url", response_model=ScrapedData)
-async def process_url(url_input: URLInput):
-    return scrape_product(url_input.url)
+def group_products(product: ScrapedData, requested_quantity: int) -> List[dict]:
+    max_quantity = max([int(option['value']) for option in product.quantity_options], default=1)
+    groups = []
+    fullObjects = requested_quantity // max_quantity
+    remainder = requested_quantity % max_quantity
+
+    for i in range(fullObjects):
+        product.quantity = max_quantity
+        groups.append(product.dict())
+
+    if remainder > 0:
+        product.quantity = remainder
+        groups.append(product.dict())
+
+    return groups
+
+
+def merge_groups(groups: List[List[dict]]) -> List[List[dict]]:
+    max_len = max([len(group) for group in groups], default=0)
+    merged = [[] for _ in range(max_len)]
+    for group in groups:
+        for i, ele in enumerate(group):
+            merged[i].append(ele)
+
+    return merged
+
+
+@app.websocket("/batch_process_products")
+async def batch_process_products(websocket: WebSocket):
+    await websocket.accept()
+
+    try:
+        data = await websocket.receive_json()
+        batch_input = BatchProductInput(**data)
+
+        results = []
+        error_results = []
+        total = len(batch_input.products)
+
+        for i, product in enumerate(batch_input.products, 1):
+            scraped_data = scrape_product(product.url_or_asin)
+            if scraped_data.status == "ERROR":
+                error_results.append(scraped_data.dict())
+            else:
+                grouped_products = group_products(scraped_data, int(product.quantity))
+                results.append(grouped_products)
+            await websocket.send_json(ProgressUpdate(processed=i, total=total).dict())
+
+            # Add a small delay to avoid overwhelming the server
+            await asyncio.sleep(0.1)
+
+        merged_result = merge_groups(results)
+        await websocket.send_json({"results": merged_result, "error_results": error_results})
+
+    except Exception as e:
+        await websocket.send_json({"error": str(e)})
+
+    finally:
+        await websocket.close()
 
 
 @app.get("/open_amazon_signin")

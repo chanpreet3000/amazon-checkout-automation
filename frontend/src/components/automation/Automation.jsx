@@ -1,72 +1,90 @@
-import React, {useEffect, useState} from "react";
-import {axiosApi} from "../../axios";
-import {ImSpinner8} from "react-icons/im";
-import UrlCard from "./UrlCard";
+import React, {useEffect, useState, useRef} from "react";
+import GroupCards from "./GroupCards";
 
 const Automation = ({urls}) => {
-  const [data, setData] = useState([]);
-  const [isFetching, setIsFetching] = useState(true);
+  const [status, setStatus] = useState("PROCESSING");
+  const [error, setError] = useState(null);
+  const [processedItems, setProcessedItems] = useState(0);
+  const [results, setResults] = useState(null);
+  const [errorResults, setErrorResults] = useState(null);
+  const ws = useRef(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsFetching(true);
-      for (const urlObj of urls) {
-        const response = await axiosApi.post('/process_url', {url: urlObj.url});
-        const processedData = response.data;
-        if (processedData.status === 'ERROR') {
-          setData((prevData) => {
-            const newData = [...prevData];
-            newData.push({...processedData});
-            return newData;
-          })
-          continue;
-        }
+    ws.current = new WebSocket('ws://localhost:8000/batch_process_products');
 
-        const maxQuantity = processedData.quantity_options && processedData.quantity_options.length > 0
-          ? Math.max(...processedData.quantity_options.map(option => parseInt(option.value)))
-          : 1;
+    ws.current.onopen = () => {
+      const products = urls.map(urlObj => ({
+        url_or_asin: urlObj.url,
+        quantity: urlObj.quantity.toString()
+      }));
 
-        // Calculate how many objects we need to create
-        const fullObjects = Math.floor(urlObj.quantity / maxQuantity);
-        const remainder = urlObj.quantity % maxQuantity;
-
-        setData((prevData) => {
-          const newData = [...prevData];
-          // Create full quantity objects
-          for (let i = 0; i < fullObjects; i++) {
-            newData.push({...processedData, defaultQuantity: maxQuantity});
-          }
-
-          // Create remainder object if needed
-          if (remainder > 0) {
-            newData.push({...processedData, defaultQuantity: remainder});
-          }
-          return newData;
-        })
-
-      }
-      setIsFetching(false);
+      ws.current.send(JSON.stringify({products: products}));
     };
 
-    fetchData();
+    ws.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      console.log(message);
+      if ('processed' in message) {
+        setStatus(`PROCESSING`);
+        setProcessedItems(message.processed);
+      } else if ('results' in message) {
+        setStatus("PROCESSED");
+        setResults(message.results);
+        setErrorResults(message.error_results);
+      } else {
+        setStatus("ERROR");
+        setError(message.error);
+      }
+    };
+
+    ws.current.onerror = (error) => {
+      setError(error);
+    };
+
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
   }, [urls]);
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="text-red-500 text-sm">
-        * Loading might take a few seconds. Please wait for the data to load.
-      </div>
-      <div className="flex flex-col gap-4">
-        {data.map((item, index) => (
-          <UrlCard key={index} item={item}/>
-        ))}
-        {isFetching && (
-          <div className="bg-[#212121ff] min-h-12 rounded-xl flex justify-center items-center">
-            <ImSpinner8 className="text-soft-white animate-spin"/>
+  const updateQuantity = (index1, index2, qtyValue) => {
+    setResults((prevResults) => {
+      const newResults = [...prevResults];
+      newResults[index1][index2].quantity = qtyValue;
+      return newResults;
+    });
+  }
+
+  if (status === 'PROCESSING') {
+    return (
+      <div className="flex justify-center items-center pt-32">
+        <div className="flex flex-col gap-4 items-center">
+          <div>Products Processed...</div>
+          <div className="flex flex-row gap-2 items-center">
+            <div className="w-[200px] h-[6px] bg-[#323232FF] rounded-xl relative overflow-hidden">
+              <div className="absolute top-0 bottom-0 bg-white transition-all duration-500"
+                   style={{
+                     width: `${((processedItems) / urls.length) * 100}%`
+                   }}
+              ></div>
+            </div>
+            <div className="text-sm">{`${(processedItems)}/${urls.length}`}</div>
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    )
+  }
+
+  if (status === 'PROCESSED') {
+    return (
+      <GroupCards results={results} errorResults={errorResults} updateQuantity={updateQuantity}/>
+    );
+  }
+
+  return (
+    <div>An Error Occurred:- {error}</div>
   );
 }
+
 export default Automation;

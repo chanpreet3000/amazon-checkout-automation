@@ -2,8 +2,13 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 
-class URLInput(BaseModel):
-    url: str
+class ProductInput(BaseModel):
+    url_or_asin: str
+    quantity: str
+
+
+class BatchProductInput(BaseModel):
+    products: List[ProductInput]
 
 
 class ScrapedData(BaseModel):
@@ -11,7 +16,7 @@ class ScrapedData(BaseModel):
     title: Optional[str]
     img_url: Optional[str]
     quantity_options: List[dict]
-    frequency_options: List[dict]
+    quantity: int
     status: str
     error: Optional[str] = None
 
@@ -20,3 +25,12 @@ class CheckoutInput(BaseModel):
     url: str
     quantity: str
     frequency: str
+
+
+class BatchScrapedData(BaseModel):
+    results: List[ScrapedData]
+
+
+class ProgressUpdate(BaseModel):
+    processed: int
+    total: int
