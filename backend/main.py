@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from browser import NonHeadlessBrowser
 
-from models import ScrapedData, URLInput
-from scrapper import scrape_product
+from models import ScrapedData, CheckoutInput, URLInput
+from scrapper import scrape_product, checkout_automation
 
 app = FastAPI()
 
@@ -41,16 +41,21 @@ async def process_url(url_input: URLInput):
 
 @app.get("/open_amazon_signin")
 async def open_amazon_signin():
-    try:
-        signin_url = "https://www.amazon.co.uk/ap/signin?openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.co.uk%2Fref%3Dnav_signin&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.assoc_handle=gbflex&openid.mode=checkid_setup&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
-        driver = NonHeadlessBrowser.get_driver()
-        driver.get(signin_url)
-        return {"message": "Amazon sign-in page opened successfully"}
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"message": f"Failed to open Amazon sign-in page: {str(e)}"}
-        )
+    signin_url = "https://www.amazon.co.uk/ap/signin?openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.co.uk%2Fref%3Dnav_signin&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.assoc_handle=gbflex&openid.mode=checkid_setup&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
+    driver = NonHeadlessBrowser.get_driver()
+    driver.get(signin_url)
+    return {"message": "Amazon sign-in page opened successfully"}
+
+
+@app.post("/checkout")
+async def checkout(checkout_input: CheckoutInput):
+    checkout_automation(checkout_input)
+    return {
+        "message": "Checkout process initiated",
+        "url": checkout_input.url,
+        "quantity": checkout_input.quantity,
+        "frequency": checkout_input.frequency
+    }
 
 
 if __name__ == "__main__":

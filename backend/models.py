@@ -14,3 +14,9 @@ class ScrapedData(BaseModel):
     frequency_options: List[dict]
     status: str
     error: Optional[str] = None
+
+
+class CheckoutInput(BaseModel):
+    url: str
+    quantity: str
+    frequency: str

@@ -3,7 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from browser import HeadlessBrowser, NonHeadlessBrowser
-from models import ScrapedData
+from models import ScrapedData, CheckoutInput
 
 
 def get_select_options(driver, select_id):
@@ -15,7 +15,7 @@ def get_select_options(driver, select_id):
 
 
 def scrape_product(url_or_asin: str) -> ScrapedData:
-    driver = NonHeadlessBrowser.get_driver()
+    driver = HeadlessBrowser.get_driver()
 
     try:
         if not url_or_asin.startswith('https'):
@@ -75,3 +75,51 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
             status="ERROR",
             error=f"An error occurred while scraping the product: {e}"
         )
+
+
+def checkout_automation(details: CheckoutInput):
+    driver = NonHeadlessBrowser.get_driver()
+
+    try:
+        url = details.url
+        quantity = details.quantity
+        frequency = details.frequency
+
+        driver.get(url)
+
+        wait = WebDriverWait(driver, 10)
+
+        # Wait for and click the Subscribe & Save option
+        sns_element = wait.until(
+            EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle"))
+        )
+        sns_element.click()
+
+        # Select quantity
+        quantity_select = Select(wait.until(EC.presence_of_element_located((By.ID, "rcxsubsQuan"))))
+        quantity_select.select_by_value(quantity)
+
+        # Select frequency
+        frequency_select = Select(wait.until(EC.presence_of_element_located((By.ID, "rcxOrdFreqSns"))))
+        frequency_select.select_by_value(frequency)
+
+        # Click the "Subscribe Now" button
+        subscribe_button = wait.until(
+            EC.element_to_be_clickable((By.ID, "rcx-subscribe-submit-button-announce"))
+        )
+        subscribe_button.click()
+
+        # Wait for the cart page to load
+        wait.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
+
+        return {
+            "status": "SUCCESS",
+            "message": "Product added to cart with Subscribe & Save options"
+        }
+
+    except Exception as e:
+        print(f"Error during checkout: {e}")
+        return {
+            "status": "ERROR",
+            "error": f"An error occurred during checkout: {str(e)}"
+        }
