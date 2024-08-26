@@ -18,6 +18,7 @@ class HeadlessBrowser:
         chrome_options = Options()
         chrome_options.add_argument(f"user-data-dir={user_data_dir}")
         chrome_options.add_argument("--no-sandbox")
+        chrome_options.page_load_strategy = 'none'
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--enable-cookies")
@@ -49,6 +50,7 @@ class NonHeadlessBrowser:
         chrome_options.add_argument(f"user-data-dir={user_data_dir}")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.page_load_strategy = 'none'
         chrome_options.add_argument("--enable-cookies")
         return webdriver.Chrome(options=chrome_options)
 

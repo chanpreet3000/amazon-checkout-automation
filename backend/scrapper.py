@@ -20,7 +20,7 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
 
         driver.get(url)
 
-        wait = WebDriverWait(driver, 4)
+        wait = WebDriverWait(driver, 15)
 
         # Wait only for the specific elements you need
         product_title = wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
@@ -94,7 +94,7 @@ def checkout_automation(driver, item: ScrapedData):
 
         driver.get(url)
 
-        wait = WebDriverWait(driver, 10)
+        wait = WebDriverWait(driver, 15)
 
         # Wait for and click the Subscribe & Save option
         sns_element = wait.until(

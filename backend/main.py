@@ -7,7 +7,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from selenium.webdriver.support import expected_conditions as EC
-from fastapi import FastAPI, WebSocket, BackgroundTasks
+from fastapi import FastAPI, WebSocket
 
 from Logger import Logger
 from browser import NonHeadlessBrowser
@@ -121,7 +121,7 @@ async def open_amazon_signin():
 
 
 @app.post("/checkout")
-async def checkout(checkout_input: CheckoutInput, background_tasks: BackgroundTasks):
+async def checkout(checkout_input: CheckoutInput):
     Logger.info('Checkout initiated', checkout_input)
 
     driver = NonHeadlessBrowser.get_driver()
@@ -129,7 +129,7 @@ async def checkout(checkout_input: CheckoutInput, background_tasks: BackgroundTa
         for item in checkout_input.data:
             checkout_automation(driver, item)
 
-        wait = WebDriverWait(driver, 5)
+        wait = WebDriverWait(driver, 15)
 
         Logger.info('Initiating checkout process')
         # Go to the cart page
@@ -143,9 +143,6 @@ async def checkout(checkout_input: CheckoutInput, background_tasks: BackgroundTa
 
         # Wait for the checkout page to load
         wait.until(EC.presence_of_element_located((By.ID, "checkoutDisplayPage")))
-
-        # Add the task to wait for browser close to background tasks
-        background_tasks.add_task(NonHeadlessBrowser.wait_for_browser_close)
 
         return {
             "message": "Checkout process initiated. The response will be sent when you close the browser.",
