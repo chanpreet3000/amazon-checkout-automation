@@ -1,6 +1,7 @@
-import React from "react";
+import React, {useState} from "react";
 import {IoClose} from "react-icons/io5";
 import {axiosApi} from "../axios";
+import {CgSpinner} from "react-icons/cg";
 
 const Code = ({text}) => {
   return (
@@ -11,13 +12,19 @@ const Code = ({text}) => {
 };
 
 const HowToUse = ({setShowHowToUse}) => {
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const handleSignIn = async () => {
-    try {
-      const response = await axiosApi.get('/open_amazon_signin');
-      alert(response.data.message);
-    } catch (error) {
-      alert("Error occurred during sign-in. Please try again.");
-    }
+    if (isSigningIn) return;
+
+    setIsSigningIn(true);
+    await axiosApi.get('/open_amazon_signin')
+      .then((response) => {
+        alert(response.data.message);
+      }).catch((error) => {
+        alert("Error occurred during sign-in. Please try again.");
+      }).finally(() => {
+        setIsSigningIn(false);
+      })
   };
 
   return (
@@ -35,15 +42,18 @@ const HowToUse = ({setShowHowToUse}) => {
           <section>
             <h2 className="text-lg font-medium">Step 1: Sign In to Amazon</h2>
             <div className="pl-4 mt-2 flex flex-col gap-2">
+              <p className="text-green-400 text-xs mt-1">
+                You only have 10 minutes to login. Make sure to accept the cookies and after login close the window.
+              </p>
               <button
-                className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold py-2 px-6 rounded-md w-max transition-colors"
+                className="hover:bg-orange-600 text-white text-sm font-semibold py-2 px-6 rounded-xl w-max transition-colors"
+                style={{
+                  backgroundColor: isSigningIn ? '#2a2a27' : '#ff9900',
+                }}
                 onClick={handleSignIn}
               >
-                Sign In to Amazon
+                {isSigningIn ? <CgSpinner className="text-white animate-spin" size={32}/> : 'Sign In to Amazon'}
               </button>
-              <p className="text-red-400 text-xs mt-1">
-                * Sign in if you haven't logged in already. You have 10 minutes to complete the login process.
-              </p>
             </div>
           </section>
 

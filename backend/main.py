@@ -1,12 +1,11 @@
+import asyncio
+
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from selenium.common import TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
+from selenium.common import WebDriverException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from fastapi import FastAPI, WebSocket
-from selenium.webdriver.support import expected_conditions as EC
 
 from Logger import Logger
 from browser import get_browser
@@ -50,27 +49,28 @@ async def batch_process_products(websocket: WebSocket):
 
 @app.get("/open_amazon_signin")
 async def open_amazon_signin():
-    sign_in_driver = get_browser()
+    driver = get_browser()
     try:
         Logger.info('Opening Amazon sign-in page')
         signin_url = "https://www.amazon.co.uk/ap/signin?openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.co.uk%2Fref%3Dnav_signin&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.assoc_handle=gbflex&openid.mode=checkid_setup&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
-        sign_in_driver.get(signin_url)
+        driver.get(signin_url)
 
-        try:
-            WebDriverWait(sign_in_driver, 60 * 10).until(
-                EC.presence_of_element_located((By.ID, "nav-link-accountList-nav-line-1"))
-            )
-            Logger.info('User successfully logged in')
-            return {"message": "User successfully logged in", "success": True}
-        except TimeoutException:
-            Logger.warn('Login timeout reached')
-            return {"message": "User Not logged In. Timed out (10 minutes)", "success": False}
+        Logger.info('Waiting for 10 minutes to allow user to sign in & accept cookies')
+        for _ in range(10 * 60):
+            await asyncio.sleep(1)
+            try:
+                driver.title
+            except WebDriverException:
+                Logger.error("Browser was closed")
+                return {"message": "Successfully Signed In"}
+
+        return {"message": "User Not logged In. Timed out (10 minutes)"}
     except Exception as e:
         Logger.error('An error occurred during the Amazon sign-in process', e)
-        return {"message": "An error occurred during the Amazon sign-in process", "success": False}
+        return {"message": "An error occurred during the Amazon sign-in process"}
 
     finally:
-        sign_in_driver.quit()
+        driver.quit()
 
 
 @app.post("/checkout")
