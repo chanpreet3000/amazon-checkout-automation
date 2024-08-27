@@ -1,15 +1,45 @@
+import asyncio
+from typing import List
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from fastapi import WebSocket
 
-from browser import HeadlessBrowser
-from models import ScrapedData
+from browser import get_browser
+from models import ScrapedData, BatchProductInput, ProgressUpdate
 from Logger import Logger
 
 
-def scrape_product(url_or_asin: str) -> ScrapedData:
-    driver = HeadlessBrowser.get_driver()
+def group_products(product: ScrapedData, requested_quantity: int) -> List[dict]:
+    max_quantity = max([int(option['value']) for option in product.quantity_options], default=1)
+    groups = []
+    fullObjects = requested_quantity // max_quantity
+    remainder = requested_quantity % max_quantity
+
+    for i in range(fullObjects):
+        product.quantity = max_quantity
+        groups.append(product.dict())
+
+    if remainder > 0:
+        product.quantity = remainder
+        groups.append(product.dict())
+
+    return groups
+
+
+def merge_groups(groups: List[List[dict]]) -> List[List[dict]]:
+    max_len = max([len(group) for group in groups], default=0)
+    merged = [[] for _ in range(max_len)]
+    for group in groups:
+        for i, ele in enumerate(group):
+            merged[i].append(ele)
+
+    return merged
+
+
+def scrape_product(driver, url_or_asin: str) -> ScrapedData:
     Logger.info("Starting Scraping URL", url_or_asin)
 
     try:
@@ -86,41 +116,43 @@ def scrape_product(url_or_asin: str) -> ScrapedData:
         )
 
 
-def checkout_automation(driver, item: ScrapedData):
+async def batch_process_products_service(websocket: WebSocket):
+    await websocket.accept()
+    driver = get_browser(headless=True, eager=False)
     try:
-        Logger.info('Checking out item', item)
-        url = item.url
-        quantity = str(item.quantity)
 
-        driver.get(url)
+        data = await websocket.receive_json()
+        batch_input = BatchProductInput(**data)
 
-        wait = WebDriverWait(driver, 15)
+        results = []
+        error_results = []
+        total = len(batch_input.products)
+        Logger.info('Batch processing started', batch_input.products)
 
-        # Wait for and click the Subscribe & Save option
-        sns_element = wait.until(
-            EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle"))
-        )
-        sns_element.click()
-        Logger.info('Clicked on Subscribe & Save')
+        for i, product in enumerate(batch_input.products, 1):
+            scraped_data = scrape_product(driver, product.url_or_asin)
+            if scraped_data.status == "ERROR":
+                error_results.append(scraped_data.dict())
+            else:
+                grouped_products = group_products(scraped_data, int(product.quantity))
+                results.append(grouped_products)
+            await websocket.send_json(ProgressUpdate(processed=i, total=total).dict())
 
-        # Select quantity
-        quantity_select = Select(wait.until(EC.presence_of_element_located((By.ID, "rcxsubsQuan"))))
-        quantity_select.select_by_value(quantity)
+            await asyncio.sleep(0.1)
 
-        Logger.info('Selected the Quantity')
+        Logger.info('Batch processing Ended', results)
 
-        # Click the "Subscribe Now" button
-        subscribe_button = wait.until(
-            EC.element_to_be_clickable((By.ID, "rcx-subscribe-submit-button-announce"))
-        )
-        subscribe_button.click()
+        merged_result = merge_groups(results)
+        Logger.info('Merged Batches', merged_result)
 
-        Logger.info('Clicked on Submit/Add to Cart')
+        response = {"results": merged_result, "error_results": error_results}
+        Logger.info('Batch processing Response', response)
 
-        # Wait for the cart page to load
-        wait.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
-
-        Logger.info('Added to Cart')
+        await websocket.send_json(response)
 
     except Exception as e:
-        Logger.error(f"Error during checkout for {item.url}", e)
+        await websocket.send_json({"error": str(e)})
+
+    finally:
+        driver.quit()
+        await websocket.close()

@@ -2,6 +2,7 @@ import React, {useContext, useState} from "react";
 import {Link} from "react-router-dom";
 import {axiosApi} from "../../axios";
 import {AutomationContext} from "./automation_context/AutomationContext";
+import {FaCheck} from "react-icons/fa";
 
 export const ErrorItem = ({item}) => {
   return (
@@ -61,16 +62,21 @@ const GroupItem = ({index1, index2, item, updateQuantity}) => {
 }
 
 const ShoppingCartItem = ({index1, item, updateQuantity}) => {
+  const [isClicked, setIsClicked] = useState(false);
+
   const checkoutHandler = async () => {
     await axiosApi.post('/checkout', {data: item}).then((response) => {
-      console.log(response.data);
+      setIsClicked(true);
     })
   }
 
   return (
     <div key={index1} className="bg-[#262626FF] text-soft-white rounded-xl px-8 py-6 flex flex-col gap-3">
       <div className="flex gap-4 justify-between items-center">
-        <div>Shopping Cart {index1 + 1}</div>
+        <div className="flex flex-row gap-2 items-center">
+          <div>Shopping Cart {index1 + 1}</div>
+          {isClicked && <FaCheck className="text-green-500" size={16}/>}
+        </div>
         <button
           onClick={checkoutHandler}
           className="bg-vibrant-orange text-soft-white text-sm font-semibold py-2 px-8 rounded-xl">

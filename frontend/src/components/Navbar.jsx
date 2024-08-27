@@ -4,8 +4,10 @@ import React from "react";
 
 const Navbar = () => {
   const handleSignIn = async () => {
-    await axiosApi.get('/open_amazon_signin');
-    alert('Please sign in to Amazon in the google chrome that opened.');
+    await axiosApi.get('/open_amazon_signin')
+      .then((response) => {
+        alert(response.data.message);
+      })
   }
 
   return (
