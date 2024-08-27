@@ -76,7 +76,7 @@ def checkout_automation(driver, item: ScrapedData):
         subscribe_button = wait.until(
             EC.element_to_be_clickable((By.ID, "rcx-subscribe-submit-button-announce"))
         )
-        subscribe_button.click()
+        driver.execute_script("arguments[0].click();", subscribe_button)
 
         Logger.info('Clicked on Submit/Add to Cart')
 
@@ -110,10 +110,10 @@ async def checkout_service(checkout_input: CheckoutInput):
         driver.get("https://www.amazon.co.uk/gp/cart/view.html")
 
         # Wait for the "Proceed to checkout" button and click it
-        checkout_button = wait.until(EC.element_to_be_clickable((By.NAME, "proceedToRetailCheckout")))
-        checkout_button.click()
-
-        Logger.info('Checkout Button Clicked')
+        # checkout_button = wait.until(EC.element_to_be_clickable((By.NAME, "proceedToRetailCheckout")))
+        # checkout_button.click()
+        #
+        # Logger.info('Checkout Button Clicked')
 
         Logger.info('Waiting for 20 minutes to allow user to complete payment')
         for _ in range(20 * 60):
