@@ -13,6 +13,8 @@ from selenium.webdriver.support import expected_conditions as EC
 
 
 def clear_cart(driver):
+    # clear the cart
+    Logger.info('Clearing the cart first')
     try:
         # Navigate to the cart page
         driver.get("https://www.amazon.co.uk/gp/cart/view.html")
@@ -101,10 +103,7 @@ async def checkout_service(checkout_input: CheckoutInput):
 
     driver = get_browser()
     try:
-
-        # clear the cart
-        Logger.info('Clearing the cart first')
-        clear_cart(driver)
+        # clear_cart(driver)
 
         for item in checkout_input.data:
             checkout_automation(driver, item)
