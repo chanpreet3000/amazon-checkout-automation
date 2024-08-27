@@ -86,10 +86,11 @@ def checkout_automation(driver, item: ScrapedData):
 
         Logger.info('Clicked on Submit/Add to Cart')
 
-        # Wait for the cart page to load
-        wait.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
-
-        Logger.info('Added to Cart')
+        wait2 = WebDriverWait(driver, 4)
+        try:
+            wait2.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
+        except TimeoutException:
+            Logger.error('Failed to verify added to cart or not. It maybe due to Amazon Prime Subscription page')
 
     except Exception as e:
         Logger.error(f"Error during checkout for {item.url}", e)
