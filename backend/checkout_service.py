@@ -17,33 +17,39 @@ def clear_cart(driver):
         # Navigate to the cart page
         driver.get("https://www.amazon.co.uk/gp/cart/view.html")
 
-        wait = WebDriverWait(driver, 4)
+        wait = WebDriverWait(driver, 10)  # Increased timeout
 
-        while True:
+        max_attempts = 3
+        attempt = 0
+
+        while attempt < max_attempts:
             try:
                 # Check if there are items in the cart
                 items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.sc-list-item-content")))
 
                 if not items:
                     Logger.info("Cart is empty")
-                    break
+                    return
 
                 # Find and click the delete button for the first item
                 delete_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[value='Delete']")))
-                delete_button.click()
+                driver.execute_script("arguments[0].click();", delete_button)
 
                 # Wait for the page to reload
                 wait.until(EC.staleness_of(delete_button))
 
-            except StaleElementReferenceException:
-                # If we get a stale element, the page has probably updated, so we'll try again
-                continue
-            except TimeoutException:
-                # If we can't find any more items, assume the cart is empty
-                Logger.info("No more items found in the cart")
-                break
+                # Reset attempt counter on successful deletion
+                attempt = 0
 
-        Logger.info("Cart cleared successfully")
+            except (StaleElementReferenceException, TimeoutException):
+                attempt += 1
+                Logger.warning(f"Attempt {attempt} failed to clear an item. Retrying...")
+                driver.refresh()  # Refresh the page to handle potential loading issues
+
+        if attempt == max_attempts:
+            Logger.error("Failed to clear the cart after maximum attempts")
+        else:
+            Logger.info("Cart cleared successfully")
 
     except Exception as e:
         Logger.error("Error while clearing the cart", e)
