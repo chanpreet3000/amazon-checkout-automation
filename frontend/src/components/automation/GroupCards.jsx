@@ -3,6 +3,7 @@ import {Link} from "react-router-dom";
 import {axiosApi} from "../../axios";
 import {AutomationContext} from "./automation_context/AutomationContext";
 import {FaCheck} from "react-icons/fa";
+import {CgSpinner} from "react-icons/cg";
 
 export const ErrorItem = ({item}) => {
   return (
@@ -63,36 +64,55 @@ const GroupItem = ({index1, index2, item, updateQuantity}) => {
 
 const ShoppingCartItem = ({index1, item, updateQuantity}) => {
   const [isClicked, setIsClicked] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const checkoutHandler = async () => {
+    setIsLoading(true);
     await axiosApi.post('/checkout', {data: item}).then((response) => {
       setIsClicked(true);
+    }).finally(() => {
+      setIsLoading(false);
     })
   }
 
   return (
     <div key={index1} className="bg-[#262626FF] text-soft-white rounded-xl px-8 py-6 flex flex-col gap-3">
-      <div className="flex gap-4 justify-between items-center">
-        <div className="flex flex-row gap-2 items-center">
-          <div>Shopping Cart {index1 + 1}</div>
-          {isClicked && <FaCheck className="text-green-500" size={16}/>}
-        </div>
-        <button
-          onClick={checkoutHandler}
-          className="bg-vibrant-orange text-soft-white text-sm font-semibold py-2 px-8 rounded-xl">
-          Checkout
-        </button>
-      </div>
-      <div className="w-full h-[2px] bg-[#363636FF]">
-      </div>
-      <div className="flex flex-col gap-4">
-        {
-          item.map((item, index2) => {
-            return <GroupItem key={index2} item={item} index1={index1} index2={index2}
-                              updateQuantity={updateQuantity}/>
-          })
-        }
-      </div>
+      {
+        !isLoading ? (
+            <>
+              <div className="flex gap-4 justify-between items-center">
+                <div className="flex flex-row gap-2 items-center">
+                  <div>Shopping Cart {index1 + 1}</div>
+                  {isClicked && <FaCheck className="text-green-500" size={16}/>}
+                </div>
+                <button
+                  onClick={checkoutHandler}
+                  className="bg-vibrant-orange text-soft-white text-sm font-semibold py-2 px-8 rounded-xl">
+                  Checkout
+                </button>
+              </div>
+              <div className="w-full h-[2px] bg-[#363636FF]">
+              </div>
+              <div className="flex flex-col gap-4">
+                {
+                  item.map((item, index2) => {
+                    return <GroupItem key={index2} item={item} index1={index1} index2={index2}
+                                      updateQuantity={updateQuantity}/>
+                  })
+                }
+              </div>
+            </>
+          )
+          :
+          (
+            <div className="w-full h-[200px] flex items-center justify-center flex-col">
+              <div><CgSpinner className="animate-spin" size={32}/></div>
+              <div>Checkout in Progress...</div>
+              <div>Complete the Checkout or Close the browser</div>
+              <div className="text-sm text-red-500">Please don't initiate another checkout before Completion.</div>
+            </div>
+          )
+      }
     </div>
   )
 }
