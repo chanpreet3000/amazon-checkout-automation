@@ -104,10 +104,9 @@ async def checkout_automation(driver, item: ScrapedData):
                     EC.element_to_be_clickable((By.ID, "prime-interstitial-nothanks-button")))
                 no_thanks_button.click()
                 Logger.info('Clicked "No thanks, continue without Prime"')
-
-                # Wait for the cart page after clicking "No thanks"
-                wait2.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
-                Logger.info('Successfully added to cart after declining Prime')
+                # # Wait for the cart page after clicking "No thanks"
+                # wait2.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
+                # Logger.info('Successfully added to cart after declining Prime')
             except TimeoutException as e:
                 Logger.error('Unable to find "No thanks" button or cart button. Checkout process may have failed.', e)
 
