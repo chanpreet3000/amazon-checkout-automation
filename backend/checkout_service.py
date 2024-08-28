@@ -12,6 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
+# Currently not using this function. It is for clearing the cart before adding new items
 def clear_cart(driver):
     # clear the cart
     Logger.info('Clearing the cart first')
@@ -21,7 +22,7 @@ def clear_cart(driver):
 
         wait = WebDriverWait(driver, 10)  # Increased timeout
 
-        max_attempts = 3
+        max_attempts = 1
         attempt = 0
 
         while attempt < max_attempts:
@@ -45,7 +46,7 @@ def clear_cart(driver):
 
             except (StaleElementReferenceException, TimeoutException):
                 attempt += 1
-                Logger.warning(f"Attempt {attempt} failed to clear an item. Retrying...")
+                Logger.warn(f"Attempt {attempt} failed to clear an item. Retrying...")
                 driver.refresh()  # Refresh the page to handle potential loading issues
 
         if attempt == max_attempts:
@@ -57,7 +58,7 @@ def clear_cart(driver):
         Logger.error("Error while clearing the cart", e)
 
 
-def checkout_automation(driver, item: ScrapedData):
+async def checkout_automation(driver, item: ScrapedData):
     try:
         Logger.info('Checking out item', item)
         url = item.url
@@ -72,11 +73,14 @@ def checkout_automation(driver, item: ScrapedData):
             EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle"))
         )
         sns_element.click()
+        await asyncio.sleep(0.4)
+
         Logger.info('Clicked on Subscribe & Save')
 
         # Select quantity
         quantity_select = Select(wait.until(EC.presence_of_element_located((By.ID, "rcxsubsQuan"))))
         quantity_select.select_by_value(quantity)
+        await asyncio.sleep(0.8)
 
         Logger.info('Selected the Quantity')
 
@@ -91,8 +95,21 @@ def checkout_automation(driver, item: ScrapedData):
         wait2 = WebDriverWait(driver, 4)
         try:
             wait2.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
-        except TimeoutException:
-            Logger.error('Failed to verify added to cart or not. It maybe due to Amazon Prime Subscription page')
+            Logger.info('Successfully added to cart')
+        except TimeoutException as e:
+            try:
+                Logger.error('Failed to verify added to cart or not. It maybe due to Amazon Prime Subscription page', e)
+
+                no_thanks_button = wait2.until(
+                    EC.element_to_be_clickable((By.ID, "prime-interstitial-nothanks-button")))
+                no_thanks_button.click()
+                Logger.info('Clicked "No thanks, continue without Prime"')
+
+                # Wait for the cart page after clicking "No thanks"
+                wait2.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
+                Logger.info('Successfully added to cart after declining Prime')
+            except TimeoutException as e:
+                Logger.error('Unable to find "No thanks" button or cart button. Checkout process may have failed.', e)
 
     except Exception as e:
         Logger.error(f"Error during checkout for {item.url}", e)
@@ -106,7 +123,7 @@ async def checkout_service(checkout_input: CheckoutInput):
         # clear_cart(driver)
 
         for item in checkout_input.data:
-            checkout_automation(driver, item)
+            await checkout_automation(driver, item)
 
         wait = WebDriverWait(driver, 15)
 
