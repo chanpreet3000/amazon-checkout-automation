@@ -9,16 +9,20 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from fastapi import WebSocket
 
 from browser import get_browser
-from models import ScrapedData, BatchProductInput, ProgressUpdate
+from models import ScrapedData, BatchProductInput, ProgressUpdate, ProductInput
 from Logger import Logger
 
 
-def group_products(scraped_product: ScrapedData, products: List[ScrapedData]) -> List[dict]:
+def group_products(scraped_product: ScrapedData, products: List[ProductInput]) -> List[dict]:
     groups = []
+    max_quantity = max(int(option['value']) for option in scraped_product.quantity_options)
+
     for product in products:
-        temp = scraped_product
-        temp.quantity = int(product.quantity)
+        temp = scraped_product.copy()  # Create a copy to avoid modifying the original
+        requested_quantity = int(product.quantity)
+        temp.quantity = min(requested_quantity, max_quantity)  # Set to lower of requested or max available
         groups.append(temp.dict())
+
     return groups
 
 
@@ -152,6 +156,7 @@ async def batch_process_products_service(websocket: WebSocket):
         response = {"results": merged_result, "error_results": error_results}
         Logger.info('Batch processing Response', response)
 
+        await asyncio.sleep(1)
         await websocket.send_json(response)
 
     except Exception as e:

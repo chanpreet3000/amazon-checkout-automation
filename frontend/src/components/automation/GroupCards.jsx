@@ -122,7 +122,7 @@ const GroupCards = ({updateQuantity}) => {
   const {processedData} = useContext(AutomationContext);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 fade-in">
       {processedData.error_results.length > 0 &&
         <div className="flex flex-col gap-2">
           {

@@ -35,18 +35,18 @@ const Home = () => {
   }
 
   const ConfirmDialog = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center fade-in">
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center fade-in">
       <div className="bg-deep-black p-6 rounded-xl">
         <p className="mb-4">Are you sure you want to reset? This will clear all entered items.</p>
         <div className="flex justify-end gap-4">
           <button
-            className="bg-red-500 text-soft-white px-4 py-2 rounded"
+            className="bg-red-500 text-soft-white px-4 py-2 rounded-xl"
             onClick={confirmReset}
           >
             Confirm
           </button>
           <button
-            className="bg-gray-500 text-soft-white px-4 py-2 rounded"
+            className="bg-gray-500 text-soft-white px-4 py-2 rounded-xl"
             onClick={cancelReset}
           >
             Cancel
@@ -63,14 +63,11 @@ const Home = () => {
           <div className="flex flex-col gap-4">
             <div>
               <button
-                className="bg-soft-white text-deep-black rounded-xl px-6 py-2"
+                className="text-soft-white bg-red-600 font-semibold rounded-xl px-6 py-2"
                 onClick={handleReset}
               >
-                Reset Items
+                Reset Checkout Items
               </button>
-            </div>
-            <div className="text-sm text-red-500 italic">
-              Resetting will clear all the items you have entered. Click the button to confirm.
             </div>
           </div>
           <Automation/>
