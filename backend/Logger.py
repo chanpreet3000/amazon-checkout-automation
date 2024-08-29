@@ -44,26 +44,26 @@ class Logger:
 
         # Color the log level according to its severity
         if level == logging.DEBUG:
-            colored_log_level = f"{Fore.CYAN}{logging.getLevelName(level):<15}"
+            colored_log_level = f"{Fore.CYAN}{logging.getLevelName(level):<10}"
             colored_message = f"{Fore.CYAN}{message:<60}"
         elif level == logging.INFO:
-            colored_log_level = f"{Fore.GREEN}{logging.getLevelName(level):<15}"
+            colored_log_level = f"{Fore.GREEN}{logging.getLevelName(level):<10}"
             colored_message = f"{Fore.GREEN}{message:<60}"
         elif level == logging.WARNING:
-            colored_log_level = f"{Fore.YELLOW}{logging.getLevelName(level):<15}"
+            colored_log_level = f"{Fore.YELLOW}{logging.getLevelName(level):<10}"
             colored_message = f"{Fore.YELLOW}{message:<60}"
         elif level == logging.ERROR:
-            colored_log_level = f"{Fore.RED}{logging.getLevelName(level):<15}"
+            colored_log_level = f"{Fore.RED}{logging.getLevelName(level):<10}"
             colored_message = f"{Fore.RED}{message:<60}"
         else:
-            colored_log_level = f"{Fore.MAGENTA}{logging.getLevelName(level):<15}"
+            colored_log_level = f"{Fore.MAGENTA}{logging.getLevelName(level):<10}"
             colored_message = f"{Fore.MAGENTA}{message:<60}"
 
         # Color the PID blue
         colored_pid = f"{Fore.BLUE}PID:{pid:<7}"
 
         # Color the file path white
-        colored_file_path = f"{Fore.WHITE}{file_path_info:<40}"
+        colored_file_path = f"{Fore.WHITE}{file_path_info:<70}"
 
         # Color the details bright white
         colored_details = f"{Fore.LIGHTWHITE_EX}{details}"

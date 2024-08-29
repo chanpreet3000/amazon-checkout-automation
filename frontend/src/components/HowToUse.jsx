@@ -11,7 +11,7 @@ const Code = ({text}) => {
 
 const HowToUse = ({setShowHowToUse}) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 fade-in">
       <div className="w-[80%] h-[80%] overflow-auto bg-deep-black rounded-lg p-8 text-white">
         <div className="flex justify-end">
           <IoClose

@@ -1,4 +1,5 @@
 import asyncio
+from collections import defaultdict
 from typing import List
 
 from selenium.webdriver.common.by import By
@@ -12,20 +13,12 @@ from models import ScrapedData, BatchProductInput, ProgressUpdate
 from Logger import Logger
 
 
-def group_products(product: ScrapedData, requested_quantity: int) -> List[dict]:
-    max_quantity = max([int(option['value']) for option in product.quantity_options], default=1)
+def group_products(scraped_product: ScrapedData, products: List[ScrapedData]) -> List[dict]:
     groups = []
-    fullObjects = requested_quantity // max_quantity
-    remainder = requested_quantity % max_quantity
-
-    for i in range(fullObjects):
-        product.quantity = max_quantity
-        groups.append(product.dict())
-
-    if remainder > 0:
-        product.quantity = remainder
-        groups.append(product.dict())
-
+    for product in products:
+        temp = scraped_product
+        temp.quantity = int(product.quantity)
+        groups.append(temp.dict())
     return groups
 
 
@@ -50,7 +43,7 @@ def scrape_product(driver, url_or_asin: str) -> ScrapedData:
 
         driver.get(url)
 
-        wait = WebDriverWait(driver, 15)
+        wait = WebDriverWait(driver, 8)
 
         # Wait only for the specific elements you need
         product_title = wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
@@ -124,17 +117,30 @@ async def batch_process_products_service(websocket: WebSocket):
     try:
         results = []
         error_results = []
-        total = len(batch_input.products)
         Logger.info('Batch processing started', batch_input)
 
-        for i, product in enumerate(batch_input.products, 1):
-            scraped_data = scrape_product(driver, product.url_or_asin)
+        url_map = defaultdict(list)
+
+        for product in batch_input.products:
+            url_map[product.url_or_asin].append(product)
+
+        url_map = dict(url_map)
+        Logger.info('URL MAP', url_map)
+
+        processed_count = 0
+        total_products = len(batch_input.products)
+
+        for url_or_asin, products in url_map.items():
+            scraped_data = scrape_product(driver, url_or_asin)
+
             if scraped_data.status == "ERROR":
                 error_results.append(scraped_data.dict())
             else:
-                grouped_products = group_products(scraped_data, int(product.quantity))
+                grouped_products = group_products(scraped_data, products)
                 results.append(grouped_products)
-            await websocket.send_json(ProgressUpdate(processed=i, total=total).dict())
+
+            processed_count += len(products)
+            await websocket.send_json(ProgressUpdate(processed=processed_count, total=total_products).dict())
 
             await asyncio.sleep(0.1)
 

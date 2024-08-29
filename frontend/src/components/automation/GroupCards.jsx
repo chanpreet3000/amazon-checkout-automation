@@ -84,7 +84,7 @@ const ShoppingCartItem = ({index1, item, updateQuantity}) => {
             <>
               <div className="flex gap-4 justify-between items-center">
                 <div className="flex flex-row gap-2 items-center">
-                  <div>Shopping Cart {index1 + 1}</div>
+                  <div>Checkout {index1 + 1}</div>
                   {isClicked && <FaCheck className="text-green-500" size={16}/>}
                 </div>
                 <button
