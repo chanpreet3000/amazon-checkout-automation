@@ -1,10 +1,12 @@
 import React, {useContext, useEffect, useRef, useState} from "react";
 import {AutomationContext} from "./automation_context/AutomationContext";
+import {AccountContext} from "../account/AccountProvider";
 
 const ProcessUrlObjects = ({setStatus,}) => {
   const {setProcessedData, inputUrlObjects} = useContext(AutomationContext);
 
   const [processedItems, setProcessedItems] = useState(0);
+  const {currentAccount} = useContext(AccountContext);
   const ws = useRef(null);
 
 
@@ -17,7 +19,7 @@ const ProcessUrlObjects = ({setStatus,}) => {
         quantity: urlObj.quantity.toString()
       }));
 
-      ws.current.send(JSON.stringify({products: products}));
+      ws.current.send(JSON.stringify({products: products, email: currentAccount}));
     };
 
     ws.current.onmessage = (event) => {

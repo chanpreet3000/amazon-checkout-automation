@@ -1,11 +1,21 @@
-import { useContext, useState } from "react";
+import {useContext, useEffect, useState} from "react";
 import UrlTextArea from "./UrlTextArea";
 import Automation from "./automation/Automation";
-import { AutomationContext } from "./automation/automation_context/AutomationContext";
+import {AutomationContext} from "./automation/automation_context/AutomationContext";
+import {AccountContext} from "./account/AccountProvider";
+import {useNavigate} from "react-router-dom";
 
 const Home = () => {
-  const { inputUrlObjects, setInputUrlObjects, resetToDefault } = useContext(AutomationContext);
+  const {inputUrlObjects, setInputUrlObjects, resetToDefault} = useContext(AutomationContext);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const {currentAccount} = useContext(AccountContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentAccount === null) {
+      navigate('/login');
+    }
+  }, [currentAccount, navigate]);
 
   const onCorrectInput = (urls) => {
     setInputUrlObjects(urls);
@@ -68,7 +78,7 @@ const Home = () => {
       ) : (
         <UrlTextArea onCorrectInput={onCorrectInput}/>
       )}
-      {showConfirmDialog && <ConfirmDialog />}
+      {showConfirmDialog && <ConfirmDialog/>}
     </div>
   );
 };

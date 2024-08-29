@@ -117,7 +117,7 @@ async def checkout_automation(driver, item: ScrapedData):
 async def checkout_service(checkout_input: CheckoutInput):
     Logger.info('Checkout initiated', checkout_input)
 
-    driver = get_browser()
+    driver = get_browser(email=checkout_input.email)
     try:
         # clear_cart(driver)
 

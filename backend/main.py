@@ -11,7 +11,7 @@ from Logger import Logger
 from browser import get_browser
 from checkout_service import checkout_service
 
-from models import CheckoutInput
+from models import CheckoutInput, SigninInput
 from scrapper import batch_process_products_service
 
 app = FastAPI()
@@ -47,11 +47,11 @@ async def batch_process_products(websocket: WebSocket):
     return await batch_process_products_service(websocket)
 
 
-@app.get("/open_amazon_signin")
-async def open_amazon_signin():
-    driver = get_browser()
+@app.post("/open_amazon_signin")
+async def open_amazon_signin(signin_input: SigninInput):
+    driver = get_browser(signin_input.email)
     try:
-        Logger.info('Opening Amazon sign-in page')
+        Logger.info('Opening Amazon sign-in page for email', signin_input)
         signin_url = "https://www.amazon.co.uk/ap/signin?openid.pape.max_auth_age=0&openid.return_to=https%3A%2F%2Fwww.amazon.co.uk%2Fref%3Dnav_signin&openid.identity=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.assoc_handle=gbflex&openid.mode=checkid_setup&openid.claimed_id=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select&openid.ns=http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0"
         driver.get(signin_url)
 
@@ -63,8 +63,7 @@ async def open_amazon_signin():
             except WebDriverException:
                 Logger.error("Browser was closed")
                 return {"message": "Successfully Signed In"}
-
-        return {"message": "User Not logged In. Timed out (10 minutes)"}
+        raise 'User Not logged In. Timed out (10 minutes)'
     except Exception as e:
         Logger.error('An error occurred during the Amazon sign-in process', e)
         return {"message": "An error occurred during the Amazon sign-in process"}

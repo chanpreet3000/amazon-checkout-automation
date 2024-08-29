@@ -4,6 +4,7 @@ import {axiosApi} from "../../axios";
 import {AutomationContext} from "./automation_context/AutomationContext";
 import {FaCheck} from "react-icons/fa";
 import {CgSpinner} from "react-icons/cg";
+import {AccountContext} from "../account/AccountProvider";
 
 export const ErrorItem = ({item}) => {
   return (
@@ -65,10 +66,11 @@ const GroupItem = ({index1, index2, item, updateQuantity}) => {
 const ShoppingCartItem = ({index1, item, updateQuantity}) => {
   const [isClicked, setIsClicked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const {currentAccount} = useContext(AccountContext);
 
   const checkoutHandler = async () => {
     setIsLoading(true);
-    await axiosApi.post('/checkout', {data: item}).then((response) => {
+    await axiosApi.post('/checkout', {data: item, email: currentAccount}).then((response) => {
       setIsClicked(true);
     }).finally(() => {
       setIsLoading(false);

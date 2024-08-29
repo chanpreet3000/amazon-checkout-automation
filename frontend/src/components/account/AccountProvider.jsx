@@ -1,24 +1,13 @@
 import React, {createContext, useState, useEffect} from 'react';
 
-const AccountContext = createContext();
+export const AccountContext = createContext();
 
-export const AccountProvider = ({children}) => {
-  const local
-  const [currentAccount, setCurrentAccount] = useState(null);
-  const [allAccounts, setAllAccounts] = useState([]);
+const AccountProvider = ({children}) => {
+  const localCurrentAccount = localStorage.getItem('currentAccount') ?? JSON.stringify(null);
+  const localAllAccounts = localStorage.getItem('allAccounts') ?? JSON.stringify([]);
 
-  useEffect(() => {
-    const storedCurrentAccount = localStorage.getItem('currentAccount');
-    const storedAllAccounts = localStorage.getItem('allAccounts');
-
-    if (storedCurrentAccount) {
-      setCurrentAccount(JSON.parse(storedCurrentAccount));
-    }
-
-    if (storedAllAccounts) {
-      setAllAccounts(JSON.parse(storedAllAccounts));
-    }
-  }, []);
+  const [currentAccount, setCurrentAccount] = useState(JSON.parse(localCurrentAccount));
+  const [allAccounts, setAllAccounts] = useState(JSON.parse(localAllAccounts));
 
   useEffect(() => {
     localStorage.setItem('currentAccount', JSON.stringify(currentAccount));
@@ -28,9 +17,7 @@ export const AccountProvider = ({children}) => {
   const addAccount = (email) => {
     if (!allAccounts.includes(email)) {
       setAllAccounts([...allAccounts, email]);
-      if (!currentAccount) {
-        setCurrentAccount(email);
-      }
+      setCurrentAccount(email);
     }
   };
 

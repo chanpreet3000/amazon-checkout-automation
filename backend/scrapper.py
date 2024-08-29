@@ -118,16 +118,14 @@ def scrape_product(driver, url_or_asin: str) -> ScrapedData:
 
 async def batch_process_products_service(websocket: WebSocket):
     await websocket.accept()
-    driver = get_browser(headless=True, eager=False)
+    data = await websocket.receive_json()
+    batch_input = BatchProductInput(**data)
+    driver = get_browser(headless=True, eager=False, email=batch_input.email)
     try:
-
-        data = await websocket.receive_json()
-        batch_input = BatchProductInput(**data)
-
         results = []
         error_results = []
         total = len(batch_input.products)
-        Logger.info('Batch processing started', batch_input.products)
+        Logger.info('Batch processing started', batch_input)
 
         for i, product in enumerate(batch_input.products, 1):
             scraped_data = scrape_product(driver, product.url_or_asin)

@@ -9,6 +9,7 @@ class ProductInput(BaseModel):
 
 class BatchProductInput(BaseModel):
     products: List[ProductInput]
+    email: str
 
 
 class ScrapedData(BaseModel):
@@ -23,6 +24,7 @@ class ScrapedData(BaseModel):
 
 class CheckoutInput(BaseModel):
     data: List[ScrapedData]
+    email: str
 
 
 class BatchScrapedData(BaseModel):
@@ -32,3 +34,7 @@ class BatchScrapedData(BaseModel):
 class ProgressUpdate(BaseModel):
     processed: int
     total: int
+
+
+class SigninInput(BaseModel):
+    email: str
