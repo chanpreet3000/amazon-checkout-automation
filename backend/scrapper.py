@@ -1,4 +1,5 @@
 import asyncio
+from typing import Dict
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
@@ -109,9 +110,14 @@ async def batch_process_products_service(websocket: WebSocket):
         error_results = []
         processed_count = 0
         total_products = len(batch_input.products)
+        url_to_scraped_data_map: Dict[str, ScrapedData] = {}
 
         for product in batch_input.products:
-            scraped_data = scrape_product_details(driver, product.url_or_asin)
+            if product.url_or_asin in url_to_scraped_data_map:
+                scraped_data = url_to_scraped_data_map[product.url_or_asin]
+            else:
+                scraped_data = scrape_product_details(driver, product.url_or_asin)
+                url_to_scraped_data_map[product.url_or_asin] = scraped_data
 
             max_quantity = max(int(option['value']) for option in scraped_data.quantity_options)
             scraped_data.quantity = min(int(product.quantity), max_quantity)
