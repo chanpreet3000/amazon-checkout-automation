@@ -1,10 +1,11 @@
-import {useContext, useState} from "react";
+import React, {useContext, useState} from "react";
 import {AccountContext} from "../account/AccountProvider";
 import {axiosApi} from "../../axios";
 import {CgSpinner} from "react-icons/cg";
 import {MdDeleteForever} from "react-icons/md";
+import {IoClose} from "react-icons/io5";
 
-const CreateAccount = ({onCreate}) => {
+const CreateAccount = ({onCreate, setIsCreateAccountOpen}) => {
   const {addAccount} = useContext(AccountContext);
   const [email, setEmail] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -31,14 +32,20 @@ const CreateAccount = ({onCreate}) => {
   return (
     <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
       <div
-        className=" bg-deep-black rounded-2xl flex items-center justify-center flex-col gap-8 p-8 w-[400px] h-[400px]">
+        className=" bg-deep-black rounded-2xl flex items-center justify-center flex-col gap-8 p-8 w-[400px] h-[400px] relative">
         {
           isSigningIn ? (
               <div className="flex flex-col items-center justify-center gap-4">
                 <div>Signing In</div>
                 <CgSpinner className="text-soft-white animate-spin" size={50}/>
+                <div className="text-red-500 text-sm">*Please close the browser after signing in successfully!</div>
               </div>)
             : (<>
+              <IoClose
+                size={24}
+                className="absolute top-8 right-8 cursor-pointer text-xl hover:text-red-500 transition-colors"
+                onClick={() => setIsCreateAccountOpen(false)}
+              />
               <div className="text-soft-white text-2xl">Create New Account</div>
               <input
                 type="email"
@@ -61,8 +68,9 @@ const Login = () => {
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
 
   return (
-    <div className="flex flex-col items-center gap-6 mt-8 text-soft-white">
-      {isCreateAccountOpen && <CreateAccount onCreate={() => setIsCreateAccountOpen(false)}/>}
+    <div className="flex flex-col items-center gap-6 mt-6 text-soft-white fade-in">
+      {isCreateAccountOpen &&
+        <CreateAccount onCreate={() => setIsCreateAccountOpen(false)} setIsCreateAccountOpen={setIsCreateAccountOpen}/>}
       <h1 className="bg-green-600 text-soft-white cursor-pointer text-lg rounded-2xl px-4 py-2"
           onClick={() => setIsCreateAccountOpen(true)}>Create New Account</h1>
       <div className="flex flex-row w-full items-center">
@@ -90,7 +98,9 @@ const Login = () => {
                                }}>
                             {account}
                           </div>
-                          <MdDeleteForever size={24} className="text-soft-white cursor-pointer hover:text-red-500 transition-colors duration-200" onClick={() => deleteAccount(account)}/>
+                          <MdDeleteForever size={24}
+                                           className="text-soft-white cursor-pointer hover:text-red-500 transition-colors duration-200"
+                                           onClick={() => deleteAccount(account)}/>
                         </div>
                       ))
                     }

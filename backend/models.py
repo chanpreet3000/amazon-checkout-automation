@@ -23,7 +23,7 @@ class ScrapedData(BaseModel):
 
 
 class CheckoutInput(BaseModel):
-    data: List[ScrapedData]
+    data: List[List[ScrapedData]]
     email: str
 
 
@@ -38,3 +38,8 @@ class ProgressUpdate(BaseModel):
 
 class SigninInput(BaseModel):
     email: str
+
+
+class CheckoutError(BaseModel):
+    message: str
+    error: str

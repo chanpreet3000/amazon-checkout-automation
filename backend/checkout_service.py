@@ -1,64 +1,19 @@
 import asyncio
+from typing import List
 
-from selenium.common import TimeoutException, StaleElementReferenceException, WebDriverException
+from selenium.common import TimeoutException, WebDriverException
 from selenium.webdriver.support.select import Select
 
 from Logger import Logger
 from browser import get_browser
-from models import CheckoutInput, ScrapedData
+from models import CheckoutInput, ScrapedData, CheckoutError
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-# Currently not using this function. It is for clearing the cart before adding new items
-def clear_cart(driver):
-    # clear the cart
-    Logger.info('Clearing the cart first')
-    try:
-        # Navigate to the cart page
-        driver.get("https://www.amazon.co.uk/gp/cart/view.html")
-
-        wait = WebDriverWait(driver, 10)  # Increased timeout
-
-        max_attempts = 1
-        attempt = 0
-
-        while attempt < max_attempts:
-            try:
-                # Check if there are items in the cart
-                items = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.sc-list-item-content")))
-
-                if not items:
-                    Logger.info("Cart is empty")
-                    return
-
-                # Find and click the delete button for the first item
-                delete_button = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "input[value='Delete']")))
-                driver.execute_script("arguments[0].click();", delete_button)
-
-                # Wait for the page to reload
-                wait.until(EC.staleness_of(delete_button))
-
-                # Reset attempt counter on successful deletion
-                attempt = 0
-
-            except (StaleElementReferenceException, TimeoutException):
-                attempt += 1
-                Logger.warn(f"Attempt {attempt} failed to clear an item. Retrying...")
-                driver.refresh()  # Refresh the page to handle potential loading issues
-
-        if attempt == max_attempts:
-            Logger.error("Failed to clear the cart after maximum attempts")
-        else:
-            Logger.info("Cart cleared successfully")
-
-    except Exception as e:
-        Logger.error("Error while clearing the cart", e)
-
-
-async def checkout_automation(driver, item: ScrapedData):
+async def add_item_to_cart(driver, item: ScrapedData):
     try:
         Logger.info('Checking out item', item)
         url = item.url
@@ -100,37 +55,39 @@ async def checkout_automation(driver, item: ScrapedData):
             try:
                 Logger.error('Failed to verify added to cart or not. It maybe due to Amazon Prime Subscription page', e)
 
-                no_thanks_button = wait2.until(
+                no_thanks_button = wait.until(
                     EC.element_to_be_clickable((By.ID, "prime-interstitial-nothanks-button")))
                 no_thanks_button.click()
+
                 Logger.info('Clicked "No thanks, continue without Prime"')
-                # # Wait for the cart page after clicking "No thanks"
-                # wait2.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
-                # Logger.info('Successfully added to cart after declining Prime')
             except TimeoutException as e:
                 Logger.error('Unable to find "No thanks" button or cart button. Checkout process may have failed.', e)
+                raise e
 
     except Exception as e:
         Logger.error(f"Error during checkout for {item.url}", e)
+        raise e
 
 
-async def checkout_service(checkout_input: CheckoutInput):
-    Logger.info('Checkout initiated', checkout_input)
-
-    driver = get_browser(email=checkout_input.email)
+async def add_all_items_to_cart_and_checkout(email, checkout_cart: List[ScrapedData]) -> List[CheckoutError]:
+    Logger.info('Checkout initiated for a cart with details', checkout_cart)
+    Logger.info('Adding items to cart')
+    errors = []
+    driver = get_browser(email=email)
     try:
-        # clear_cart(driver)
+        for item in checkout_cart:
+            try:
+                await add_item_to_cart(driver, item)
+            except Exception as e:
+                errors.append(CheckoutError(message=f'{item.title}', error=str(e)))
 
-        for item in checkout_input.data:
-            await checkout_automation(driver, item)
-
-        wait = WebDriverWait(driver, 15)
-
-        Logger.info('Initiating checkout process')
+        Logger.info('All items added to cart')
 
         # Go to the cart page
+        Logger.info('Initiating checkout process')
         driver.get("https://www.amazon.co.uk/gp/cart/view.html")
 
+        # wait = WebDriverWait(driver, 15)
         # Wait for the "Proceed to checkout" button and click it
         # checkout_button = wait.until(EC.element_to_be_clickable((By.NAME, "proceedToRetailCheckout")))
         # checkout_button.click()
@@ -141,22 +98,29 @@ async def checkout_service(checkout_input: CheckoutInput):
         for _ in range(20 * 60):
             await asyncio.sleep(1)
             try:
-                # Check if the browser window is still open
-                driver.title  # Accessing the title to check if the driver is alive
-            except WebDriverException:
-                Logger.error("Browser was closed before payment was completed")
-                return {"message": "Failed: Browser was closed before payment was completed"}
+                driver.title
+            except WebDriverException as e:
+                Logger.error("Browser was closed before payment was completed", e)
+                raise e
 
         Logger.info('Wait period for payment completed')
 
-        return {
-            "message": "Checkout process initiated. The response will be sent when you close the browser.",
-        }
     except Exception as e:
         Logger.error('An error occurred during the checkout process', e)
-        return {
-            "message": "An error occurred during the checkout process",
-            "error": str(e),
-        }
+        errors.append(CheckoutError(message='An error occurred during the checkout process', error=str(e)))
     finally:
         driver.quit()
+
+    return errors
+
+
+async def checkout_service(checkout_input: CheckoutInput) -> List[List[CheckoutError]]:
+    Logger.info('Checkout Service is initiated with input', checkout_input)
+
+    result = []
+    for checkout_cart in checkout_input.data:
+        errors = await add_all_items_to_cart_and_checkout(checkout_input.email, checkout_cart)
+        result.append(errors)
+
+    Logger.info('Checkout Service Ended with response', result)
+    return result

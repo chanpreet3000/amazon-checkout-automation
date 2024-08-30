@@ -1,5 +1,5 @@
 import React, {useState, useContext} from "react";
-import GroupCards from "./GroupCards";
+import CheckoutProcessedData from "./CheckoutProcessedData";
 import {AutomationContext} from "./automation_context/AutomationContext";
 import ProcessUrlObjects from "./ProcessUrlObjects";
 
@@ -8,10 +8,10 @@ const Automation = () => {
   const [status, setStatus] = useState(processedData !== null ? "PROCESSED" : "PROCESSING");
 
 
-  const updateQuantity = (index1, index2, qtyValue) => {
+  const updateQuantity = (index, qtyValue) => {
     setProcessedData((prevResults) => {
       const newResults = {results: [...prevResults.results], error_results: [...prevResults.error_results]};
-      newResults.results[index1][index2].quantity = qtyValue;
+      newResults.results[index].quantity = qtyValue;
       return newResults;
     });
   }
@@ -19,7 +19,7 @@ const Automation = () => {
   if (status === 'PROCESSING') {
     return <ProcessUrlObjects setStatus={setStatus}/>
   } else if (status === 'PROCESSED') {
-    return <GroupCards updateQuantity={updateQuantity}/>
+    return <CheckoutProcessedData updateQuantity={updateQuantity}/>
   } else {
     return <div>An Error Occurred</div>
   }
