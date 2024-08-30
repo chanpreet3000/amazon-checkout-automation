@@ -4,7 +4,7 @@ import {axiosApi} from "../../axios";
 import {AutomationContext} from "./automation_context/AutomationContext";
 import {CgSpinner} from "react-icons/cg";
 import {AccountContext} from "../account/AccountProvider";
-import { MdOutlineShoppingCartCheckout } from "react-icons/md";
+import {MdOutlineShoppingCartCheckout} from "react-icons/md";
 
 export const ShoppingCartErrorItem = ({item}) => {
   return (
@@ -94,7 +94,7 @@ const ShoppingCart = ({updateQuantity}) => {
               {
                 processedData.results.map((item, index) => {
                   return <ShoppingCartItem key={index} item={item} index={index}
-                                    updateQuantity={updateQuantity}/>
+                                           updateQuantity={updateQuantity}/>
                 })
               }
             </div>
@@ -105,7 +105,7 @@ const ShoppingCart = ({updateQuantity}) => {
         {!checkoutInProgress ? (
             <button className="bg-green-700 text-soft-white flex items-center text-lg px-10 py-2 rounded-2xl"
                     onClick={checkoutHandler}>
-              <MdOutlineShoppingCartCheckout size={24} />
+              <MdOutlineShoppingCartCheckout size={24}/>
               <div>Checkout All Items</div>
             </button>)
           :
@@ -121,26 +121,17 @@ const ShoppingCart = ({updateQuantity}) => {
       </div>
 
       {/*Render Checkout Errors*/}
-      {checkoutErrors &&
-        <div className="flex flex-col gap-4 fade-in">
-          <div className="text-red-500 text-xl">Errors occurred during Checkouts</div>
-          <div className="flex flex-col gap-8">
+      {checkoutErrors && checkoutErrors.length > 0 &&
+        <div className="flex flex-col gap-4 fade-in bg-[#212121FF] rounded-2xl px-6 py-4">
+          <div className="text-soft-white text-xl">Errors occurred during Checkouts</div>
+          <div className="flex flex-col gap-4">
             {
-              checkoutErrors.map((errors, index) => {
+              checkoutErrors.map((error, index) => {
                 return (
-                  <div className="flex flex-col gap-4 p-8 bg-[#212121FF] rounded-2xl overflow-hidden">
-                    <div className="text-xl">Checkout {index + 1}</div>
-                    {
-                      errors.map((error, index) => {
-                        return (
-                          <div key={index} className="rounded-2xl bg-red-700 text-soft-white py-2 px-4">
-                            <div className="line-clamp-3">
-                              {`${error.message}  -  ${error.error}`}
-                            </div>
-                          </div>
-                        )
-                      })
-                    }
+                  <div key={index} className="rounded-2xl bg-red-700 text-soft-white py-2 px-4">
+                    <div className="line-clamp-3">
+                      {`${error.message}  -  ${error.error}`}
+                    </div>
                   </div>
                 )
               })

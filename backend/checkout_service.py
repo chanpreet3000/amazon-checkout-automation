@@ -1,7 +1,7 @@
 import asyncio
 from typing import List
 
-from selenium.common import TimeoutException, WebDriverException
+from selenium.common import TimeoutException
 from selenium.webdriver.support.select import Select
 
 from Logger import Logger
@@ -21,7 +21,7 @@ async def add_item_to_cart(driver, item: ScrapedData):
 
         driver.get(url)
 
-        wait = WebDriverWait(driver, 15)
+        wait = WebDriverWait(driver, 10)
 
         # Wait for and click the Subscribe & Save option
         sns_element = wait.until(
@@ -44,83 +44,61 @@ async def add_item_to_cart(driver, item: ScrapedData):
             EC.element_to_be_clickable((By.ID, "rcx-subscribe-submit-button-announce"))
         )
         driver.execute_script("arguments[0].click();", subscribe_button)
-
         Logger.info('Clicked on Submit/Add to Cart')
 
-        wait2 = WebDriverWait(driver, 4)
+        wait_small = WebDriverWait(driver, 5)
         try:
-            wait2.until(EC.presence_of_element_located((By.ID, "sc-buy-box-ptc-button")))
-            Logger.info('Successfully added to cart')
+            no_thanks_button = wait_small.until(
+                EC.element_to_be_clickable((By.ID, "prime-interstitial-nothanks-button")))
+            no_thanks_button.click()
+            Logger.info('Clicked "No thanks, continue without Prime"')
         except TimeoutException as e:
-            try:
-                Logger.error('Failed to verify added to cart or not. It maybe due to Amazon Prime Subscription page', e)
+            Logger.info('No Prime subscription page found', e)
 
-                no_thanks_button = wait.until(
-                    EC.element_to_be_clickable((By.ID, "prime-interstitial-nothanks-button")))
-                no_thanks_button.click()
+        confirm_subscription_button = wait_small.until(
+            EC.element_to_be_clickable((By.ID, "bottomSubmitOrderButtonId"))
+        )
+        driver.execute_script("arguments[0].click();", confirm_subscription_button)
+        Logger.info('Clicked on Confirm Subscription')
 
-                Logger.info('Clicked "No thanks, continue without Prime"')
-            except TimeoutException as e:
-                Logger.error('Unable to find "No thanks" button or cart button. Checkout process may have failed.', e)
-                raise e
+        # Check for duplicate order confirmation
+        try:
+            duplicate_order_button = wait_small.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//input[@name='forcePlaceOrder'][@value='Place this duplicate order']"))
+            )
+            driver.execute_script("arguments[0].click();", duplicate_order_button)
+            Logger.info('Clicked on Place this duplicate order')
+        except TimeoutException:
+            Logger.info('No duplicate order confirmation found')
+
+        # Wait for the confirmation page to load
+        wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        # Check for the specific h4 element indicating successful subscription
+        success_indicator = "//h4[@class='a-alert-heading'][contains(text(), 'Subscription confirmed, thanks.')]"
+
+        try:
+            wait.until(EC.presence_of_element_located((By.XPATH, success_indicator)))
+            Logger.info('Subscription confirmed successfully')
+        except TimeoutException as e:
+            Logger.error('Subscription confirmation not found', e)
+            raise e
 
     except Exception as e:
-        Logger.error(f"Error during checkout for {item.url}", e)
+        Logger.error(f"Error during checkout for {item.title}", e)
         raise e
 
 
-async def add_all_items_to_cart_and_checkout(email, checkout_cart: List[ScrapedData]) -> List[CheckoutError]:
-    Logger.info('Checkout initiated for a cart with details', checkout_cart)
-    Logger.info('Adding items to cart')
-    errors = []
-    driver = get_browser(email=email)
-    try:
-        for item in checkout_cart:
-            try:
-                await add_item_to_cart(driver, item)
-            except Exception as e:
-                errors.append(CheckoutError(message=f'{item.title}', error=str(e)))
-
-        Logger.info('All items added to cart')
-
-        # Go to the cart page
-        Logger.info('Initiating checkout process')
-        driver.get("https://www.amazon.co.uk/gp/cart/view.html")
-
-        # wait = WebDriverWait(driver, 15)
-        # Wait for the "Proceed to checkout" button and click it
-        # checkout_button = wait.until(EC.element_to_be_clickable((By.NAME, "proceedToRetailCheckout")))
-        # checkout_button.click()
-        #
-        # Logger.info('Checkout Button Clicked')
-
-        Logger.info('Waiting for 20 minutes to allow user to complete payment')
-        for _ in range(20 * 60):
-            await asyncio.sleep(1)
-            try:
-                driver.title
-            except WebDriverException as e:
-                Logger.error("Browser was closed before payment was completed", e)
-                raise e
-
-        Logger.info('Wait period for payment completed')
-
-    except Exception as e:
-        Logger.error('An error occurred during the checkout process', e)
-        errors.append(CheckoutError(message='An error occurred during the checkout process', error=str(e)))
-    finally:
-        driver.quit()
-
-    return errors
-
-
-async def checkout_service(checkout_input: CheckoutInput) -> List[List[CheckoutError]]:
+async def checkout_service(checkout_input: CheckoutInput) -> List[CheckoutError]:
     Logger.info('Checkout Service is initiated with input', checkout_input)
+    errors = []
+    driver = get_browser(email=checkout_input.email)
 
-    result = []
-    for checkout_cart in checkout_input.data:
-        errors = await add_all_items_to_cart_and_checkout(checkout_input.email, checkout_cart)
-        result.append(errors)
+    for item in checkout_input.data:
+        try:
+            await add_item_to_cart(driver, item)
+        except Exception as e:
+            errors.append(CheckoutError(message=f'Error occurred in {item.title}', error=str(e)))
 
-    Logger.info('Checkout Service Ended with response', result)
-    return result
+    Logger.info('Checkout Service Ended with response', errors)
+    return errors

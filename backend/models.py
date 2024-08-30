@@ -23,7 +23,7 @@ class ScrapedData(BaseModel):
 
 
 class CheckoutInput(BaseModel):
-    data: List[List[ScrapedData]]
+    data: List[ScrapedData]
     email: str
 
 
