@@ -1,11 +1,10 @@
-import asyncio
 from typing import List
 
 from selenium.common import TimeoutException
 from selenium.webdriver.support.select import Select
 
 from Logger import Logger
-from browser import get_browser
+from utils import get_browser, sleep
 from models import CheckoutInput, ScrapedData, CheckoutError
 
 from selenium.webdriver.common.by import By
@@ -13,41 +12,38 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-async def add_item_to_cart(driver, item: ScrapedData):
+def subscribe_item_and_checkout(driver, item: ScrapedData):
     try:
-        Logger.info('Checking out item', item)
+        sleep(1, 2)
+        Logger.info('Subscribing & Checking out item', item)
         url = item.url
         quantity = str(item.quantity)
-
         driver.get(url)
 
         wait = WebDriverWait(driver, 10)
 
         # Wait for and click the Subscribe & Save option
-        sns_element = wait.until(
-            EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle"))
-        )
+        sleep(0.6, 1)
+        sns_element = wait.until(EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle")))
         sns_element.click()
-        await asyncio.sleep(0.4)
 
         Logger.info('Clicked on Subscribe & Save')
 
-        # Select quantity
+        # Wait for the quantity select element to load and select the quantity
+        sleep(0.6, 0.8)
         quantity_select = Select(wait.until(EC.presence_of_element_located((By.ID, "rcxsubsQuan"))))
         quantity_select.select_by_value(quantity)
-        await asyncio.sleep(0.8)
-
         Logger.info('Selected the Quantity')
 
         # Click the "Subscribe Now" button
-        subscribe_button = wait.until(
-            EC.element_to_be_clickable((By.ID, "rcx-subscribe-submit-button-announce"))
-        )
+        sleep(1, 1.2)
+        subscribe_button = wait.until(EC.element_to_be_clickable((By.ID, "rcx-subscribe-submit-button-announce")))
         driver.execute_script("arguments[0].click();", subscribe_button)
         Logger.info('Clicked on Submit/Add to Cart')
 
         wait_small = WebDriverWait(driver, 5)
         try:
+            sleep(1, 1.5)
             no_thanks_button = wait_small.until(
                 EC.element_to_be_clickable((By.ID, "prime-interstitial-nothanks-button")))
             no_thanks_button.click()
@@ -55,6 +51,7 @@ async def add_item_to_cart(driver, item: ScrapedData):
         except TimeoutException as e:
             Logger.info('No Prime subscription page found', e)
 
+        sleep(1.3, 1.5)
         confirm_subscription_button = wait_small.until(
             EC.element_to_be_clickable((By.ID, "bottomSubmitOrderButtonId"))
         )
@@ -63,6 +60,7 @@ async def add_item_to_cart(driver, item: ScrapedData):
 
         # Check for duplicate order confirmation
         try:
+            sleep(0.6, 0.8)
             duplicate_order_button = wait_small.until(
                 EC.element_to_be_clickable(
                     (By.XPATH, "//input[@name='forcePlaceOrder'][@value='Place this duplicate order']"))
@@ -89,14 +87,14 @@ async def add_item_to_cart(driver, item: ScrapedData):
         raise e
 
 
-async def checkout_service(checkout_input: CheckoutInput) -> List[CheckoutError]:
+def checkout_service(checkout_input: CheckoutInput) -> List[CheckoutError]:
     Logger.info('Checkout Service is initiated with input', checkout_input)
     errors = []
     driver = get_browser(email=checkout_input.email)
 
     for item in checkout_input.data:
         try:
-            await add_item_to_cart(driver, item)
+            subscribe_item_and_checkout(driver, item)
         except Exception as e:
             errors.append(CheckoutError(message=f'Error occurred in {item.title}', error=str(e)))
 

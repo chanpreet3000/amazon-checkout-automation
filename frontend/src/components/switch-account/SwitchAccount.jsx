@@ -4,6 +4,8 @@ import {axiosApi} from "../../axios";
 import {CgSpinner} from "react-icons/cg";
 import {MdDeleteForever} from "react-icons/md";
 import {IoClose} from "react-icons/io5";
+import {IoMdAddCircle} from "react-icons/io";
+import {IoMdPerson} from "react-icons/io";
 
 const CreateAccount = ({onCreate, setIsCreateAccountOpen}) => {
   const {addAccount} = useContext(AccountContext);
@@ -71,8 +73,11 @@ const SwitchAccount = () => {
     <div className="flex flex-col items-center gap-6 mt-6 text-soft-white fade-in">
       {isCreateAccountOpen &&
         <CreateAccount onCreate={() => setIsCreateAccountOpen(false)} setIsCreateAccountOpen={setIsCreateAccountOpen}/>}
-      <h1 className="bg-green-600 text-soft-white cursor-pointer text-lg rounded-2xl px-4 py-2"
-          onClick={() => setIsCreateAccountOpen(true)}>Create New Account</h1>
+      <button className="bg-green-600 text-soft-white text-lg rounded-2xl px-4 py-2 flex items-center gap-1"
+              onClick={() => setIsCreateAccountOpen(true)}>
+        <IoMdAddCircle size={20}/>
+        <div>Create New Account</div>
+      </button>
       <div className="flex flex-row w-full items-center">
         <div className="flex-1">
         </div>
@@ -85,21 +90,27 @@ const SwitchAccount = () => {
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4">
-                  <h1 className="text-soft-white text-xl">Select Account</h1>
+                  <h1 className="text-soft-white text-xl">Select An Account</h1>
                   <div className="w-full flex flex-col gap-2 px-8">
                     {
                       allAccounts.map(account => (
-                        <div className="flex flex-row justify-between items-center gap-6">
+                        <div className="flex flex-row justify-between items-center gap-2">
+
                           <div key={account}
                                className="flex-1 bg-[#333333FF] text-soft-white cursor-pointer rounded-xl px-4 py-2"
                                onClick={() => selectAccount(account)}
                                style={{
                                  backgroundColor: currentAccount === account ? '#00bb00' : '#333333FF',
                                }}>
-                            {account}
-                            {currentAccount === account && ' (Active)'}
+                            <div className="flex flex-row gap-2 items-center">
+                              <IoMdPerson size={20}/>
+                              <div>
+                                {account}
+                                {currentAccount === account && ' (Active)'}
+                              </div>
+                            </div>
                           </div>
-                          <MdDeleteForever size={24}
+                          <MdDeleteForever size={32}
                                            className="text-soft-white cursor-pointer hover:text-red-500 transition-colors duration-200"
                                            onClick={() => deleteAccount(account)}/>
                         </div>

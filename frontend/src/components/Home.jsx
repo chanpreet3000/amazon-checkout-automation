@@ -64,10 +64,10 @@ const Home = () => {
           <div className="flex flex-col gap-4">
             <div>
               <button
-                className="text-soft-white bg-red-600 font-semibold rounded-xl px-4 py-3 flex items-center"
+                className="text-soft-white bg-red-600 font-semibold text-base rounded-xl px-4 py-3 flex items-center"
                 onClick={handleReset}
               >
-                <MdDeleteForever size={24}/>
+                <MdDeleteForever size={20}/>
                 <div>Reset Checkout Items</div>
               </button>
             </div>

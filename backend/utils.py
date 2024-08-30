@@ -1,6 +1,8 @@
 import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+import random
+import time
 
 
 def get_browser(email, headless=False, eager=True):
@@ -13,3 +15,8 @@ def get_browser(email, headless=False, eager=True):
     if headless:
         chrome_options.add_argument("--headless")
     return webdriver.Chrome(options=chrome_options)
+
+
+def sleep(min_delay: float = 1, max_delay: float = 3):
+    sleep_time = random.uniform(min_delay, max_delay)
+    time.sleep(sleep_time)

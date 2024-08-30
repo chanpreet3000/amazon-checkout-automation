@@ -6,13 +6,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from fastapi import WebSocket
 
-from browser import get_browser
+from utils import get_browser, sleep
 from models import ScrapedData, BatchProductInput, ProgressUpdate
 from Logger import Logger
 
 
-def scrape_product(driver, url_or_asin: str) -> ScrapedData:
+def scrape_product_details(driver, url_or_asin: str) -> ScrapedData:
     Logger.info("Starting Scraping URL", url_or_asin)
+    sleep(1, 2)
 
     try:
         if not url_or_asin.startswith('https'):
@@ -24,11 +25,16 @@ def scrape_product(driver, url_or_asin: str) -> ScrapedData:
 
         wait = WebDriverWait(driver, 8)
 
-        # Wait only for the specific elements you need
-        product_title = wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
-        title = product_title.text
-        Logger.info("title found", title)
+        # Scrape Product Title
+        try:
+            product_title = wait.until(EC.presence_of_element_located((By.ID, "productTitle")))
+            title = product_title.text
+            Logger.info("title found", title)
+        except NoSuchElementException:
+            Logger.error("No Product Title found")
+            title = None
 
+        # Scrape Image Url
         try:
             img_element = driver.find_element(By.ID, "landingImage")
             img_url = img_element.get_attribute("src")
@@ -38,12 +44,15 @@ def scrape_product(driver, url_or_asin: str) -> ScrapedData:
             img_url = None
 
         try:
+            sleep(0.2, 0.7)
+            # Wait and click the Subscribe & Save toggle option
             sns_element = wait.until(
                 EC.element_to_be_clickable((By.ID, "snsAccordionRowMiddle"))
             )
             sns_element.click()
             Logger.info('Clicked on Subscribe & Save')
 
+            # Wait and get quantity options
             select_element = wait.until(
                 EC.presence_of_element_located((By.ID, "rcxsubsQuan"))
             )
@@ -102,7 +111,7 @@ async def batch_process_products_service(websocket: WebSocket):
         total_products = len(batch_input.products)
 
         for product in batch_input.products:
-            scraped_data = scrape_product(driver, product.url_or_asin)
+            scraped_data = scrape_product_details(driver, product.url_or_asin)
 
             max_quantity = max(int(option['value']) for option in scraped_data.quantity_options)
             scraped_data.quantity = min(int(product.quantity), max_quantity)
@@ -115,9 +124,6 @@ async def batch_process_products_service(websocket: WebSocket):
             processed_count += 1
 
             await websocket.send_json(ProgressUpdate(processed=processed_count, total=total_products).dict())
-            await asyncio.sleep(0.1)
-
-        Logger.info('Batch processing Ended', results)
 
         response = {"results": results, "error_results": error_results}
         Logger.info('Batch processing Response', response)

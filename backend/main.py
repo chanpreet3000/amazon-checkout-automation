@@ -8,7 +8,7 @@ from starlette.requests import Request
 from fastapi import FastAPI, WebSocket
 
 from Logger import Logger
-from browser import get_browser
+from utils import get_browser
 from checkout_service import checkout_service
 
 from models import CheckoutInput, SigninInput
@@ -57,7 +57,7 @@ async def open_amazon_signin(signin_input: SigninInput):
 
         Logger.info('Waiting for 10 minutes to allow user to sign in & accept cookies')
         for _ in range(10 * 60):
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.2)
             try:
                 driver.title
             except WebDriverException:
@@ -74,7 +74,7 @@ async def open_amazon_signin(signin_input: SigninInput):
 
 @app.post("/checkout")
 async def checkout(checkout_input: CheckoutInput):
-    return await checkout_service(checkout_input)
+    return checkout_service(checkout_input)
 
 
 if __name__ == "__main__":

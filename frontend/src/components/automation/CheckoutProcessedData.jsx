@@ -5,6 +5,7 @@ import {AutomationContext} from "./automation_context/AutomationContext";
 import {CgSpinner} from "react-icons/cg";
 import {AccountContext} from "../account/AccountProvider";
 import {MdOutlineShoppingCartCheckout} from "react-icons/md";
+import {FaShoppingCart} from "react-icons/fa";
 
 export const ShoppingCartErrorItem = ({item}) => {
   return (
@@ -81,66 +82,72 @@ const ShoppingCart = ({updateQuantity}) => {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-4">
-        {
-          <div className="bg-[#1e1c1c] text-soft-white rounded-xl px-8 py-6 flex flex-col gap-3">
-            <div className="flex flex-row gap-2 items-center text-xl font-semibold">
-              Shopping Cart
-            </div>
-            <div className="w-full h-[2px] bg-[#363636FF]">
-            </div>
-            <div className="flex flex-col gap-4">
-              {
-                processedData.results.map((item, index) => {
-                  return <ShoppingCartItem key={index} item={item} index={index}
-                                           updateQuantity={updateQuantity}/>
-                })
-              }
-            </div>
-          </div>
-        }
-      </div>
-      <div className="flex flex-col items-center">
-        {!checkoutInProgress ? (
-            <button className="bg-green-700 text-soft-white flex items-center text-lg px-10 py-2 rounded-2xl"
-                    onClick={checkoutHandler}>
-              <MdOutlineShoppingCartCheckout size={24}/>
-              <div>Checkout All Items</div>
-            </button>)
-          :
-          (<div className="w-full flex items-center justify-center flex-col fade-in">
-            <div><CgSpinner className="animate-spin" size={36}/>
+    <>
+      {checkoutInProgress &&
+        <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center fade-in">
+          <div className="w-full flex items-center justify-center gap-2 flex-col text-2xl">
+            <div><CgSpinner className="animate-spin" size={44}/>
             </div>
             <div>Checkout in Progress...</div>
             <div className="text-sm text-red-500">Please don't close any browser and wait for all the checkout to go
-              through
+              through!
             </div>
-          </div>)
-        }
-      </div>
+          </div>
+        </div>}
 
-      {/*Render Checkout Errors*/}
-      {checkoutErrors && checkoutErrors.length > 0 &&
-        <div className="flex flex-col gap-4 fade-in bg-[#212121FF] rounded-2xl px-6 py-4">
-          <div className="text-soft-white text-xl">Errors occurred during Checkouts</div>
+      <div className="flex flex-col gap-6">
+        <div className="bg-[#1e1c1c] text-soft-white rounded-xl px-8 py-6 flex flex-col gap-3">
+          <div className="flex flex-row gap-2 items-center text-xl font-semibold">
+            <FaShoppingCart size={24}/>
+            <div>Shopping Cart</div>
+          </div>
+          <div className="w-full h-[2px] bg-[#363636FF]">
+          </div>
           <div className="flex flex-col gap-4">
             {
-              checkoutErrors.map((error, index) => {
-                return (
-                  <div key={index} className="rounded-2xl bg-red-700 text-soft-white py-2 px-4">
-                    <div className="line-clamp-3">
-                      {`${error.message}  -  ${error.error}`}
-                    </div>
-                  </div>
-                )
+              processedData.results.map((item, index) => {
+                return <ShoppingCartItem key={index} item={item} index={index}
+                                         updateQuantity={updateQuantity}/>
               })
             }
           </div>
         </div>
-      }
-    </div>
-  )
+        <div className="flex justify-center">
+          <button className="bg-green-700 text-soft-white flex items-center text-lg px-10 py-2 rounded-2xl"
+                  onClick={checkoutHandler}>
+            <MdOutlineShoppingCartCheckout size={24}/>
+            <div>Checkout All Items</div>
+          </button>
+        </div>
+
+        {/*Render Checkout Errors*/}
+        {checkoutErrors &&
+          (checkoutErrors.length > 0 ? (
+              <div className="flex flex-col gap-4 fade-in bg-[#212121FF] rounded-2xl px-6 py-4">
+                <div className="text-soft-white text-xl">Errors occurred during Checkouts</div>
+                <div className="flex flex-col gap-4">
+                  {
+                    checkoutErrors.map((error, index) => {
+                      return (
+                        <div key={index} className="rounded-2xl bg-red-700 text-soft-white py-2 px-4">
+                          <div className="line-clamp-3">
+                            {`${error.message}  -  ${error.error}`}
+                          </div>
+                        </div>
+                      )
+                    })
+                  }
+                </div>
+              </div>)
+            : (
+              <div className="flex flex-col gap-4 fade-in bg-green-700 rounded-2xl px-6 py-4">
+                <div className="text-soft-white text-xl">No Errors During Checkout!</div>
+              </div>
+            ))
+        }
+      </div>
+    </>
+  );
 }
 
 const CheckoutProcessedData = ({updateQuantity}) => {
