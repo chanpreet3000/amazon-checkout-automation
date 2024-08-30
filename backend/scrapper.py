@@ -124,6 +124,7 @@ async def batch_process_products_service(websocket: WebSocket):
             processed_count += 1
 
             await websocket.send_json(ProgressUpdate(processed=processed_count, total=total_products).dict())
+            await asyncio.sleep(0.1)
 
         response = {"results": results, "error_results": error_results}
         Logger.info('Batch processing Response', response)
