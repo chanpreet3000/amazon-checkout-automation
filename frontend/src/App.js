@@ -4,7 +4,7 @@ import Home from "./components/Home";
 import Navbar from "./components/Navbar";
 import {AutomationContextProvider} from "./components/automation/automation_context/AutomationContext";
 import AccountProvider from "./components/account/AccountProvider";
-import Login from "./components/Login/Login";
+import SwitchAccount from "./components/switch-account/SwitchAccount";
 
 function App() {
   useEffect(() => {
@@ -19,7 +19,7 @@ function App() {
             <Navbar/>
             <Routes>
               <Route path="/" element={<Home/>}/>
-              <Route path="/login" element={<Login/>}/>
+              <Route path="/switch-account" element={<SwitchAccount/>}/>
             </Routes>
           </div>
         </div>

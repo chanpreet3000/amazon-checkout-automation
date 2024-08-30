@@ -4,6 +4,7 @@ import {axiosApi} from "../../axios";
 import {AutomationContext} from "./automation_context/AutomationContext";
 import {CgSpinner} from "react-icons/cg";
 import {AccountContext} from "../account/AccountProvider";
+import { MdOutlineShoppingCartCheckout } from "react-icons/md";
 
 export const ShoppingCartErrorItem = ({item}) => {
   return (
@@ -102,8 +103,10 @@ const ShoppingCart = ({updateQuantity}) => {
       </div>
       <div className="flex flex-col items-center">
         {!checkoutInProgress ? (
-            <button className="bg-green-700 text-soft-white text-lg px-10 py-2 rounded-2xl"
-                    onClick={checkoutHandler}>Checkout All Items
+            <button className="bg-green-700 text-soft-white flex items-center text-lg px-10 py-2 rounded-2xl"
+                    onClick={checkoutHandler}>
+              <MdOutlineShoppingCartCheckout size={24} />
+              <div>Checkout All Items</div>
             </button>)
           :
           (<div className="w-full flex items-center justify-center flex-col fade-in">

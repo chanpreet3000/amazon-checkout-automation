@@ -4,6 +4,7 @@ import Automation from "./automation/Automation";
 import {AutomationContext} from "./automation/automation_context/AutomationContext";
 import {AccountContext} from "./account/AccountProvider";
 import {useNavigate} from "react-router-dom";
+import {MdDeleteForever} from "react-icons/md";
 
 const Home = () => {
   const {inputUrlObjects, setInputUrlObjects, resetToDefault} = useContext(AutomationContext);
@@ -13,7 +14,7 @@ const Home = () => {
 
   useEffect(() => {
     if (currentAccount === null) {
-      navigate('/login');
+      navigate('/switch-account');
     }
   }, [currentAccount, navigate]);
 
@@ -63,10 +64,11 @@ const Home = () => {
           <div className="flex flex-col gap-4">
             <div>
               <button
-                className="text-soft-white bg-red-600 font-semibold rounded-xl px-6 py-2"
+                className="text-soft-white bg-red-600 font-semibold rounded-xl px-4 py-3 flex items-center"
                 onClick={handleReset}
               >
-                Reset Checkout Items
+                <MdDeleteForever size={24}/>
+                <div>Reset Checkout Items</div>
               </button>
             </div>
           </div>

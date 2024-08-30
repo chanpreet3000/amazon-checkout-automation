@@ -63,7 +63,7 @@ const CreateAccount = ({onCreate, setIsCreateAccountOpen}) => {
   );
 }
 
-const Login = () => {
+const SwitchAccount = () => {
   const {currentAccount, allAccounts, deleteAccount, selectAccount} = useContext(AccountContext);
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
 
@@ -97,6 +97,7 @@ const Login = () => {
                                  backgroundColor: currentAccount === account ? '#00bb00' : '#333333FF',
                                }}>
                             {account}
+                            {currentAccount === account && ' (Active)'}
                           </div>
                           <MdDeleteForever size={24}
                                            className="text-soft-white cursor-pointer hover:text-red-500 transition-colors duration-200"
@@ -115,4 +116,4 @@ const Login = () => {
   )
 }
 
-export default Login;
+export default SwitchAccount;
