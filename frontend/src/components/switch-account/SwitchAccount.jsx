@@ -70,7 +70,7 @@ const SwitchAccount = () => {
   const [isCreateAccountOpen, setIsCreateAccountOpen] = useState(false);
 
   return (
-    <div className="flex flex-col items-center gap-6 mt-6 text-soft-white fade-in">
+    <div className="flex flex-col items-center gap-6 mt-4 text-soft-white fade-in">
       {isCreateAccountOpen &&
         <CreateAccount onCreate={() => setIsCreateAccountOpen(false)} setIsCreateAccountOpen={setIsCreateAccountOpen}/>}
       <button className="bg-green-600 text-soft-white text-lg rounded-2xl px-4 py-2 flex items-center gap-1"
@@ -78,10 +78,8 @@ const SwitchAccount = () => {
         <IoMdAddCircle size={20}/>
         <div>Create New Account</div>
       </button>
-      <div className="flex flex-row w-full items-center">
-        <div className="flex-1">
-        </div>
-        <div className="flex-1 bg-[#242424FF] h-[450px] rounded-xl overflow-auto p-4">
+      <div className="flex w-full justify-center">
+        <div className="bg-[#242424FF] w-[36%] h-[450px] rounded-xl overflow-auto p-4 custom-scrollbar">
           {
             allAccounts.length === 0
               ? (
@@ -110,7 +108,7 @@ const SwitchAccount = () => {
                               </div>
                             </div>
                           </div>
-                          <MdDeleteForever size={32}
+                          <MdDeleteForever size={28}
                                            className="text-soft-white cursor-pointer hover:text-red-500 transition-colors duration-200"
                                            onClick={() => deleteAccount(account)}/>
                         </div>
@@ -121,7 +119,6 @@ const SwitchAccount = () => {
               )
           }
         </div>
-        <div className="flex-1"></div>
       </div>
     </div>
   )
