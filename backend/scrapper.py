@@ -102,7 +102,7 @@ async def batch_process_products_service(websocket: WebSocket):
     await websocket.accept()
     data = await websocket.receive_json()
     batch_input = BatchProductInput(**data)
-    driver = get_browser(headless=True, eager=False, email=batch_input.email)
+    driver = get_browser(headless=False, eager=False, email=batch_input.email)
     try:
         Logger.info('Batch processing started', batch_input)
 
